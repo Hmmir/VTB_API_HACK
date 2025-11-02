@@ -8,6 +8,14 @@ from app.models.budget import Budget
 from app.models.goal import Goal
 from app.models.bank_product import BankProduct
 from app.models.recommendation import Recommendation
+from app.models.consent import (
+    PartnerBank,
+    ConsentRequest,
+    Consent,
+    ConsentEvent,
+    ConsentStatus,
+    ConsentScope,
+)
 
 __all__ = [
     "User",
@@ -19,5 +27,11 @@ __all__ = [
     "Goal",
     "BankProduct",
     "Recommendation",
+    "PartnerBank",
+    "ConsentRequest",
+    "Consent",
+    "ConsentEvent",
+    "ConsentStatus",
+    "ConsentScope",
 ]
 

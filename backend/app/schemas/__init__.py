@@ -8,6 +8,15 @@ from app.schemas.budget import BudgetCreate, BudgetResponse
 from app.schemas.goal import GoalCreate, GoalResponse, GoalUpdate
 from app.schemas.bank_product import BankProductResponse
 from app.schemas.recommendation import RecommendationResponse
+from app.schemas.consent import (
+    ConsentRequestCreate,
+    ConsentRequestResponse,
+    ConsentDecisionRequest,
+    ConsentResponse,
+    ConsentEventResponse,
+    ConsentListResponse,
+    PartnerBankResponse,
+)
 
 __all__ = [
     "UserCreate",
@@ -27,5 +36,12 @@ __all__ = [
     "GoalUpdate",
     "BankProductResponse",
     "RecommendationResponse",
+    "ConsentRequestCreate",
+    "ConsentRequestResponse",
+    "ConsentDecisionRequest",
+    "ConsentResponse",
+    "ConsentEventResponse",
+    "ConsentListResponse",
+    "PartnerBankResponse",
 ]
 

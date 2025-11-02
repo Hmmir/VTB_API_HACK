@@ -43,7 +43,7 @@ async def health_check():
 
 
 # Import API routers
-from app.api import auth, banks, accounts, transactions, analytics, budgets, recommendations, goals, products, system, gost, well_known
+from app.api import auth, banks, accounts, transactions, analytics, budgets, recommendations, goals, products, system, gost, well_known, consents
 from app.api import export as export_router
 
 # Register API routers
@@ -57,6 +57,7 @@ app.include_router(goals.router, prefix="/api/v1/goals", tags=["Goals"])
 app.include_router(products.router, prefix="/api/v1/products", tags=["Products"])
 app.include_router(recommendations.router, prefix="/api/v1/recommendations", tags=["Recommendations"])
 app.include_router(export_router.router, prefix="/api/v1/export", tags=["Export"])
+app.include_router(consents.router, prefix="/api/v1/consents", tags=["Consents"])
 app.include_router(system.router, prefix="/api/v1", tags=["System"])
 app.include_router(gost.router, prefix="/api/v1", tags=["GOST"])
 app.include_router(well_known.router, tags=["Well-Known"])
