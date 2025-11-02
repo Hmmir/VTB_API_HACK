@@ -1,9 +1,12 @@
 """Security utilities: password hashing, JWT, encryption."""
 from datetime import datetime, timedelta
-from typing import Optional
+from typing import Optional, Literal
+from pathlib import Path
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 from cryptography.fernet import Fernet
+from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.backends import default_backend
 from app.config import settings
 
 # Password hashing context (argon2 - modern, no length limits)
@@ -97,4 +100,125 @@ def encrypt_token(token: str) -> str:
 def decrypt_token(encrypted_token: str) -> str:
     """Decrypt a token using Fernet (AES-256)."""
     return cipher.decrypt(encrypted_token.encode()).decode()
+
+
+# RSA Key Management for RS256 JWT
+def _load_rsa_keys():
+    """Load RSA private and public keys from files."""
+    keys_dir = Path(__file__).parent.parent.parent / "keys"
+    private_key_path = keys_dir / "private_key.pem"
+    public_key_path = keys_dir / "public_key.pem"
+    
+    if not private_key_path.exists() or not public_key_path.exists():
+        print("⚠️ RSA keys not found. Run: docker exec financehub_backend python scripts/generate_rsa_keys.py")
+        return None, None
+    
+    # Load private key
+    with open(private_key_path, "rb") as f:
+        private_key = serialization.load_pem_private_key(
+            f.read(),
+            password=None,
+            backend=default_backend()
+        )
+    
+    # Load public key
+    with open(public_key_path, "rb") as f:
+        public_key = serialization.load_pem_public_key(
+            f.read(),
+            backend=default_backend()
+        )
+    
+    return private_key, public_key
+
+
+_rsa_private_key, _rsa_public_key = _load_rsa_keys()
+
+
+def create_bank_token(bank_code: str, audience: str = "interbank", expires_delta: Optional[timedelta] = None) -> str:
+    """
+    Create RS256 JWT token for interbank communication.
+    
+    Args:
+        bank_code: Bank identifier (e.g., 'financehub', 'vbank')
+        audience: Token audience (default: 'interbank')
+        expires_delta: Custom expiration (default: 60 minutes)
+    
+    Returns:
+        Signed RS256 JWT token
+    """
+    if not _rsa_private_key:
+        raise RuntimeError("RSA private key not loaded. Cannot create bank token.")
+    
+    to_encode = {
+        "sub": bank_code,
+        "type": "bank",
+        "iss": bank_code,
+        "aud": audience
+    }
+    
+    if expires_delta:
+        expire = datetime.utcnow() + expires_delta
+    else:
+        expire = datetime.utcnow() + timedelta(minutes=60)
+    
+    to_encode["exp"] = expire
+    
+    # Sign with RS256
+    encoded_jwt = jwt.encode(to_encode, _rsa_private_key, algorithm="RS256")
+    return encoded_jwt
+
+
+def verify_bank_token(token: str) -> Optional[dict]:
+    """
+    Verify RS256 JWT bank token.
+    
+    Args:
+        token: RS256 JWT token to verify
+    
+    Returns:
+        Decoded payload if valid, None otherwise
+    """
+    if not _rsa_public_key:
+        print("⚠️ RSA public key not loaded. Cannot verify bank token.")
+        return None
+    
+    try:
+        payload = jwt.decode(token, _rsa_public_key, algorithms=["RS256"])
+        
+        # Validate it's a bank token
+        if payload.get("type") != "bank":
+            print("⚠️ Token is not a bank token")
+            return None
+        
+        return payload
+    except JWTError as e:
+        print(f"⚠️ Bank token verification failed: {e}")
+        return None
+
+
+def get_jwks() -> dict:
+    """
+    Generate JWKS (JSON Web Key Set) for RS256 public key.
+    
+    Returns:
+        JWKS dictionary for /.well-known/jwks.json endpoint
+    """
+    if not _rsa_public_key:
+        return {"keys": []}
+    
+    from cryptography.hazmat.primitives.asymmetric import rsa
+    from jose.jwk import RSAKey
+    
+    # Convert to JWK format
+    jwk = RSAKey(key=_rsa_public_key, algorithm="RS256")
+    jwk_dict = jwk.to_dict()
+    
+    # Add required fields for JWKS
+    jwk_dict["use"] = "sig"  # signature
+    jwk_dict["kid"] = "financehub-2025"  # key ID
+    jwk_dict["alg"] = "RS256"
+    
+    return {
+        "keys": [jwk_dict]
+    }
 
