@@ -1,0 +1,56 @@
+# FastAPI Framework
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+python-multipart==0.0.6
+
+# Database
+sqlalchemy==2.0.23
+alembic==1.12.1
+psycopg2-binary==2.9.9
+
+# Redis
+redis==5.0.1
+hiredis==2.2.3
+
+# Authentication & Security
+python-jose[cryptography]==3.3.0
+passlib[argon2]==1.7.4
+argon2-cffi==23.1.0
+cryptography==41.0.7
+
+# HTTP Client
+httpx==0.25.2
+requests==2.31.0
+
+# Data Validation
+pydantic==2.5.0
+pydantic-settings==2.1.0
+email-validator==2.1.0
+
+# Background Tasks
+apscheduler==3.10.4
+
+# Retry Logic
+tenacity==8.2.3
+
+# Logging
+python-json-logger==2.0.7
+
+# Testing
+pytest==7.4.3
+pytest-asyncio==0.21.1
+pytest-cov==4.1.0
+
+# Code Quality
+black==23.12.0
+flake8==6.1.0
+mypy==1.7.1
+
+# Environment Variables
+python-dotenv==1.0.0
+
+# Export to PDF/Excel
+reportlab==4.0.7
+openpyxl==3.1.2
+Pillow==10.1.0
+

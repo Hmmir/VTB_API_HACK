@@ -1,0 +1,314 @@
+@import url('https://fonts.googleapis.com/css2?family=Unbounded:wght@400;600;700&family=Bricolage+Grotesque:wght@300;400;500;600&family=Azeret+Mono:wght@400;500&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --font-display: 'Unbounded', 'Bricolage Grotesque', system-ui, sans-serif;
+  --font-body: 'Bricolage Grotesque', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-mono: 'Azeret Mono', ui-monospace, SFMono-Regular, 'JetBrains Mono', monospace;
+
+  --palette-primary-50: 230 251 247;
+  --palette-primary-100: 212 245 240;
+  --palette-primary-200: 168 234 223;
+  --palette-primary-300: 99 216 196;
+  --palette-primary-400: 63 201 179;
+  --palette-primary-500: 36 176 154;
+  --palette-primary-600: 29 152 134;
+  --palette-primary-700: 22 122 104;
+  --palette-primary-800: 19 95 81;
+  --palette-primary-900: 15 72 61;
+  --palette-ink: 14 23 40;
+  --palette-sand: 247 237 226;
+  --palette-dusk: 26 36 54;
+  --palette-glow: 252 184 125;
+  --palette-roseflare: 255 111 145;
+
+  --color-ink: #0e1728;
+  --color-muted: rgba(241, 244, 251, 0.72);
+  --color-surface: rgba(255, 255, 255, 0.86);
+  --color-panel: rgba(18, 29, 47, 0.68);
+
+  --card-surface: rgba(255, 255, 255, 0.58);
+  --card-border: rgba(255, 255, 255, 0.24);
+  --card-shadow: 0 18px 45px rgba(15, 35, 54, 0.12);
+  --input-surface: rgba(255, 255, 255, 0.82);
+  --input-border: rgba(255, 255, 255, 0.45);
+  --input-ring: rgba(99, 216, 196, 0.62);
+  --shell-overlay: rgba(255, 255, 255, 0.08);
+
+  --app-background: radial-gradient(120% 120% at 0% 0%, rgba(32, 86, 105, 0.22), transparent 60%),
+    radial-gradient(90% 90% at 100% 0%, rgba(255, 188, 123, 0.18), transparent 65%),
+    linear-gradient(135deg, #f0f4ff 20%, #fef6f0 100%);
+  --aurora-before: radial-gradient(45% 40% at 20% 20%, rgba(36, 176, 154, 0.4), transparent 60%),
+    radial-gradient(50% 45% at 80% 15%, rgba(255, 111, 145, 0.28), transparent 70%);
+  --aurora-after: radial-gradient(50% 60% at 50% 110%, rgba(14, 23, 40, 0.45), transparent 70%),
+    linear-gradient(160deg, rgba(239, 250, 255, 0.2), transparent 70%);
+  --aurora-opacity: 0.85;
+
+  font-family: var(--font-body);
+  line-height: 1.6;
+  font-weight: 400;
+  color: var(--color-ink);
+  background-color: #eef2f7;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+[data-theme='nocturne'] {
+  --palette-primary-50: 31 60 71;
+  --palette-primary-100: 36 78 90;
+  --palette-primary-200: 45 112 118;
+  --palette-primary-300: 53 142 140;
+  --palette-primary-400: 63 170 156;
+  --palette-primary-500: 74 205 177;
+  --palette-primary-600: 60 180 158;
+  --palette-primary-700: 44 145 131;
+  --palette-primary-800: 28 109 101;
+  --palette-primary-900: 18 78 73;
+  --palette-ink: 230 236 255;
+  --palette-sand: 48 57 78;
+  --palette-dusk: 11 18 31;
+  --palette-glow: 255 158 104;
+  --palette-roseflare: 255 129 170;
+
+  --color-ink: #e6ecff;
+  --color-muted: rgba(14, 18, 29, 0.78);
+  --color-surface: rgba(20, 28, 44, 0.88);
+  --color-panel: rgba(12, 18, 33, 0.92);
+
+  --card-surface: rgba(16, 24, 39, 0.82);
+  --card-border: rgba(122, 191, 255, 0.18);
+  --card-shadow: 0 26px 65px rgba(4, 7, 17, 0.48);
+  --input-surface: rgba(22, 30, 46, 0.86);
+  --input-border: rgba(89, 123, 186, 0.28);
+  --input-ring: rgba(74, 205, 177, 0.58);
+  --shell-overlay: rgba(12, 18, 33, 0.75);
+
+  --app-background: radial-gradient(120% 120% at 12% -10%, rgba(24, 92, 105, 0.38), transparent 70%),
+    radial-gradient(100% 120% at 100% 0%, rgba(138, 84, 255, 0.22), transparent 72%),
+    linear-gradient(135deg, #050510 10%, #0b1625 55%, #081419 100%);
+  --aurora-before: radial-gradient(55% 60% at 18% 18%, rgba(74, 205, 177, 0.38), transparent 65%),
+    radial-gradient(55% 55% at 85% 20%, rgba(255, 129, 170, 0.32), transparent 75%);
+  --aurora-after: radial-gradient(50% 60% at 50% 120%, rgba(6, 12, 22, 0.8), transparent 70%),
+    linear-gradient(170deg, rgba(18, 36, 58, 0.68), transparent 78%);
+  --aurora-opacity: 0.95;
+}
+
+html[data-theme] {
+  transition: background 0.6s ease, color 0.45s ease;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  color: var(--color-ink);
+  background: var(--app-background);
+  position: relative;
+  overflow-x: hidden;
+}
+
+body::before,
+body::after {
+  content: '';
+  position: fixed;
+  pointer-events: none;
+  inset: 0;
+  opacity: var(--aurora-opacity);
+  mix-blend-mode: screen;
+  z-index: -2;
+}
+
+body::before {
+  background: var(--aurora-before);
+  animation: aurora-sweep 22s ease-in-out infinite;
+}
+
+body::after {
+  background: var(--aurora-after);
+  backdrop-filter: blur(90px);
+  animation: aurora-pulse 26s ease-in-out infinite;
+}
+
+@keyframes aurora-sweep {
+  0%, 100% {
+    transform: translate3d(0, 0, 0) scale(1.02);
+  }
+  50% {
+    transform: translate3d(-3vw, 2vh, 0) scale(1.08);
+  }
+}
+
+@keyframes aurora-pulse {
+  0%, 100% {
+    opacity: 0.55;
+    transform: translate3d(0, 0, 0) scale(1.05);
+  }
+  50% {
+    opacity: 0.75;
+    transform: translate3d(2vw, -2vh, 0) scale(1.12);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body::before,
+  body::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}
+
+#root {
+  width: 100%;
+}
+
+@layer base {
+  h1, h2, h3, h4 {
+    font-family: var(--font-display);
+    letter-spacing: -0.03em;
+    color: var(--color-ink);
+  }
+
+  code, pre {
+    font-family: var(--font-mono);
+  }
+
+  ::selection {
+    background: rgba(255, 111, 145, 0.35);
+    color: #121f35;
+  }
+
+  body {
+    background: var(--app-background);
+  }
+}
+
+@layer components {
+  .input-field {
+    @apply w-full rounded-[1.1rem] px-4 py-3 text-sm font-medium tracking-wide placeholder:text-slate-400 transition focus:outline-none;
+    background: var(--input-surface);
+    border: 1px solid var(--input-border);
+    color: var(--color-ink);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25);
+  }
+
+  .input-field:focus {
+    box-shadow: 0 0 0 2px var(--input-ring), 0 0 0 4px rgba(255, 255, 255, 0.12);
+  }
+
+  .card {
+    @apply relative overflow-hidden rounded-[1.75rem] p-6 backdrop-blur-xl;
+    background: var(--card-surface);
+    border: 1px solid var(--card-border);
+    box-shadow: var(--card-shadow);
+  }
+}
+
+[data-theme='nocturne'] body::before,
+[data-theme='nocturne'] body::after {
+  mix-blend-mode: lighten;
+}
+
+[data-theme='nocturne'] .text-ink {
+  color: var(--color-ink) !important;
+}
+
+[data-theme='nocturne'] .text-ink\/90 {
+  color: color-mix(in srgb, var(--color-ink) 90%, transparent) !important;
+}
+
+[data-theme='nocturne'] .text-ink\/80 {
+  color: color-mix(in srgb, var(--color-ink) 80%, transparent) !important;
+}
+
+[data-theme='nocturne'] .text-ink\/70 {
+  color: color-mix(in srgb, var(--color-ink) 70%, transparent) !important;
+}
+
+[data-theme='nocturne'] .text-ink\/60 {
+  color: color-mix(in srgb, var(--color-ink) 60%, transparent) !important;
+}
+
+[data-theme='nocturne'] .text-ink\/50,
+[data-theme='nocturne'] .text-ink\/45,
+[data-theme='nocturne'] .text-ink\/40 {
+  color: color-mix(in srgb, var(--color-ink) 45%, transparent) !important;
+}
+
+[data-theme='nocturne'] .text-gray-600,
+[data-theme='nocturne'] .text-gray-500,
+[data-theme='nocturne'] .text-gray-700 {
+  color: color-mix(in srgb, var(--color-ink) 68%, transparent) !important;
+}
+
+[data-theme='nocturne'] .text-gray-900 {
+  color: color-mix(in srgb, var(--color-ink) 92%, transparent) !important;
+}
+
+[data-theme='nocturne'] .bg-white\/80,
+[data-theme='nocturne'] .bg-white\/70,
+[data-theme='nocturne'] .bg-white\/65,
+[data-theme='nocturne'] .bg-white\/60,
+[data-theme='nocturne'] .bg-white\/55 {
+  background-color: rgba(17, 26, 43, 0.78) !important;
+}
+
+[data-theme='nocturne'] .bg-white {
+  background-color: rgba(17, 26, 43, 0.92) !important;
+}
+
+[data-theme='nocturne'] .border-white\/20,
+[data-theme='nocturne'] .border-white\/25,
+[data-theme='nocturne'] .border-white\/30,
+[data-theme='nocturne'] .border-white\/35,
+[data-theme='nocturne'] .border-white\/40,
+[data-theme='nocturne'] .border-white\/45,
+[data-theme='nocturne'] .border-white\/50 {
+  border-color: rgba(120, 186, 255, 0.22) !important;
+}
+
+[data-theme='nocturne'] .border-white {
+  border-color: rgba(120, 186, 255, 0.24) !important;
+}
+
+[data-theme='nocturne'] .bg-gray-50,
+[data-theme='nocturne'] .hover\:bg-gray-100:hover {
+  background-color: rgba(14, 24, 39, 0.68) !important;
+}
+
+[data-theme='nocturne'] .text-gray-500 span,
+[data-theme='nocturne'] .text-gray-600 span {
+  color: inherit !important;
+}
+
+[data-theme='nocturne'] button[data-variant='secondary'] {
+  background: rgba(24, 36, 58, 0.82) !important;
+  border-color: rgba(96, 158, 201, 0.22) !important;
+  color: color-mix(in srgb, var(--color-ink) 88%, transparent) !important;
+  box-shadow: 0 16px 30px rgba(6, 12, 18, 0.55) !important;
+}
+
+[data-theme='nocturne'] button[data-variant='ghost'] {
+  background: rgba(18, 28, 46, 0.55) !important;
+  border-color: rgba(96, 158, 201, 0.15) !important;
+  color: color-mix(in srgb, var(--color-ink) 80%, transparent) !important;
+}
+
+[data-theme='nocturne'] button[data-variant='primary'] {
+  background-image: linear-gradient(135deg, rgba(74, 205, 177, 0.95), rgba(45, 164, 150, 0.95), rgba(18, 78, 73, 0.95)) !important;
+  box-shadow: 0 24px 55px rgba(6, 57, 48, 0.55) !important;
+}
+
+[data-theme='nocturne'] button[data-variant] {
+  --tw-ring-offset-color: rgba(10, 16, 28, 0.88);
+  --tw-ring-color: rgba(74, 205, 177, 0.48);
+}
+
+[data-theme='nocturne'] .group\/card:hover::after,
+[data-theme='nocturne'] .group\/card::after {
+  filter: drop-shadow(0 0 25px rgba(74, 205, 177, 0.28));
+}
+
