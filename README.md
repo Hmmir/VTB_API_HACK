@@ -6,14 +6,24 @@
 
 ---
 
+## 📋 Системные требования
+
+- **Docker** 20.10+ и **Docker Compose** 2.0+
+- **Git** для клонирования репозитория
+- **8 GB RAM** (минимум 4 GB)
+- **10 GB свободного места** на диске
+- **Порты**: 3000 (frontend), 8000 (backend), 5432 (postgres), 6379 (redis)
+
+---
+
 ## 🚀 Быстрый старт
 
 ### Запуск проекта
 
 ```bash
 # 1. Клонировать репозиторий
-git clone <repo-url>
-cd VTB_API
+git clone https://github.com/Hmmir/VTB_API_HACK.git
+cd VTB_API_HACK
 
 # 2. Запустить через Docker
 docker compose up -d
@@ -790,6 +800,69 @@ curl -X POST http://localhost:8000/api/v1/auth/login \
 - `ALL_FIXES_AND_COMPARISON.md` - Сравнение с bank-in-a-box
 - `QUICK_TEST.md` - Быстрая проверка проекта
 - `PROJECT_WORKING.md` - Подробная инструкция
+
+---
+
+## 🔧 Troubleshooting
+
+### Проблема: Порты заняты
+
+```bash
+# Проверить занятые порты
+netstat -ano | findstr "3000 8000 5432 6379"
+
+# Остановить контейнеры
+docker-compose down
+
+# Изменить порты в docker-compose.yml
+```
+
+### Проблема: Контейнеры не запускаются
+
+```bash
+# Очистить все контейнеры и образы
+docker-compose down -v
+docker system prune -a
+
+# Пересобрать
+docker-compose build --no-cache
+docker-compose up -d
+```
+
+### Проблема: База данных не инициализируется
+
+```bash
+# Пересоздать базу данных
+docker-compose down -v
+docker volume rm vtbapi_postgres_data
+docker-compose up -d
+
+# Подождать 30 секунд и создать пользователей
+docker-compose exec backend python scripts/create_demo_user.py
+docker-compose exec backend python scripts/create_gost_demo_user.py
+docker-compose exec backend python scripts/seed_demo_data.py
+```
+
+### Проблема: Frontend не загружается
+
+```bash
+# Очистить кэш браузера (Ctrl+Shift+Delete)
+# Или открыть в режиме инкогнито (Ctrl+Shift+N)
+
+# Пересобрать frontend
+docker-compose build --no-cache frontend
+docker-compose up -d frontend
+```
+
+### Проблема: Ошибки в логах backend
+
+```bash
+# Посмотреть логи
+docker-compose logs backend --tail=100
+
+# Перезапустить backend
+docker-compose restart backend
+```
 
 ---
 
