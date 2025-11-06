@@ -1,4 +1,5 @@
 import axios, { AxiosInstance } from 'axios';
+import { handleAPIError, retryOperation } from '../utils/errorHandler';
 import type {
   User,
   LoginCredentials,
@@ -68,6 +69,23 @@ class APIService {
         return Promise.reject(error);
       }
     );
+  }
+
+  // Generic HTTP methods
+  async get<T = any>(url: string, config?: any): Promise<{ data: T }> {
+    return this.client.get(url, config);
+  }
+
+  async post<T = any>(url: string, data?: any, config?: any): Promise<{ data: T }> {
+    return this.client.post(url, data, config);
+  }
+
+  async put<T = any>(url: string, data?: any, config?: any): Promise<{ data: T }> {
+    return this.client.put(url, data, config);
+  }
+
+  async delete<T = any>(url: string, config?: any): Promise<{ data: T }> {
+    return this.client.delete(url, config);
   }
 
   // Auth endpoints
@@ -240,6 +258,16 @@ class APIService {
     return response.data;
   }
 
+  async createProductAgreement(data: {
+    bank_product_id: string;
+    linked_account_id: number;
+    amount: number;
+    term_months: number;
+  }): Promise<any> {
+    const response = await this.client.post('/products/agreements', data);
+    return response.data;
+  }
+
   async getBankProduct(productId: string, bankCode: string): Promise<any> {
     const response = await this.client.get(`/products/${productId}`, { params: { bank_code: bankCode } });
     return response.data;
@@ -270,6 +298,48 @@ class APIService {
   async testGostConnection(): Promise<{ success: boolean; message: string; [key: string]: any }> {
     const response = await this.client.get('/gost/test-connection');
     return response.data;
+  }
+
+  // Bank Capital endpoints
+  async getBankCapital(): Promise<any[]> {
+    try {
+      const response = await retryOperation(() => this.client.get('/bank-capital/'));
+      return response.data;
+    } catch (error) {
+      handleAPIError(error, 'Не удалось загрузить данные о капитале банков');
+      return [];
+    }
+  }
+
+  async getBankCapitalByCode(bankCode: string): Promise<any> {
+    try {
+      const response = await this.client.get(`/bank-capital/${bankCode}`);
+      return response.data;
+    } catch (error) {
+      handleAPIError(error, `Не удалось загрузить данные о капитале банка ${bankCode}`);
+      throw error;
+    }
+  }
+
+  // Key Rate endpoints
+  async getCurrentKeyRate(): Promise<any> {
+    try {
+      const response = await this.client.get('/key-rate/current');
+      return response.data;
+    } catch (error) {
+      handleAPIError(error, 'Не удалось загрузить текущую ключевую ставку ЦБ');
+      throw error;
+    }
+  }
+
+  async getKeyRateHistory(limit: number = 10): Promise<any[]> {
+    try {
+      const response = await this.client.get('/key-rate/history', { params: { limit } });
+      return response.data;
+    } catch (error) {
+      handleAPIError(error, 'Не удалось загрузить историю ключевой ставки');
+      return [];
+    }
   }
 }
 

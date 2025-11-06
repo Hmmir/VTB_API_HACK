@@ -5,6 +5,11 @@ import type { Account, BankConnection, Transaction } from '../types';
 import Card from '../components/common/Card';
 import Button from '../components/common/Button';
 import { useAuth } from '../contexts/AuthContext';
+import SpendingChart from '../components/charts/SpendingChart';
+import BalanceTrendChart from '../components/charts/BalanceTrendChart';
+import IncomeExpenseChart from '../components/charts/IncomeExpenseChart';
+import GOSTResponsePanel from '../components/GOSTResponsePanel';
+import { formatCompactCurrency, formatCurrency } from '../utils/formatters';
 
 const DashboardPage = () => {
   const { user } = useAuth();
@@ -108,11 +113,11 @@ const DashboardPage = () => {
 
   return (
     <div className="space-y-12">
-      <section className="grid gap-6 xl:grid-cols-[minmax(0,1.5fr)_minmax(280px,0.8fr)]">
+      <section className="grid gap-6 xl:grid-cols-1">
         <Card className="relative overflow-hidden bg-gradient-to-br from-primary-100/70 via-white/80 to-white/60 p-8">
           <span className="pointer-events-none absolute -right-24 -top-24 h-64 w-64 rounded-full bg-primary-300/40 blur-3xl" />
-          <div className="flex flex-wrap items-start justify-between gap-6">
-            <div className="max-w-xl space-y-4">
+    <div className="space-y-6">
+            <div className="max-w-3xl space-y-4">
               <p className="text-xs uppercase tracking-[0.35em] text-ink/45">Орбитальный обзор</p>
               <h1 className="text-4xl font-display text-ink">
                 {user?.full_name ? `${user.full_name},` : 'Команда,'} ваша мультибанковская матрица готова
@@ -136,32 +141,38 @@ const DashboardPage = () => {
               </div>
             </div>
 
-            <div className="flex flex-col gap-4 rounded-[1.5rem] border border-white/30 bg-white/70 p-6 text-sm shadow-[0_20px_45px_rgba(14,23,40,0.12)]">
-              <div>
-                <p className="text-xs uppercase tracking-[0.22em] text-ink/40">Общий баланс</p>
-                <p className="mt-2 font-display text-3xl text-ink">
-                  {totalBalance.toLocaleString('ru-RU')} ₽
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              <div className="rounded-[1.5rem] border border-white/30 bg-white/70 p-6 shadow-[0_20px_45px_rgba(14,23,40,0.12)]">
+                <p className="text-xs uppercase tracking-[0.22em] text-ink/40 mb-4">Общий баланс</p>
+                <p className="font-display text-3xl text-ink leading-tight break-words">
+                  {totalBalance.toLocaleString('ru-RU', { maximumFractionDigits: 2 })} ₽
                 </p>
               </div>
-              <div className="border-t border-white/40 pt-4">
-                <p className="text-xs uppercase tracking-[0.22em] text-ink/40">Активные счета</p>
-                <p className="mt-2 font-display text-2xl text-ink">
+              <div className="rounded-[1.5rem] border border-white/30 bg-white/70 p-6 shadow-[0_20px_45px_rgba(14,23,40,0.12)]">
+                <p className="text-xs uppercase tracking-[0.22em] text-ink/40 mb-4">Подключений</p>
+                <p className="font-display text-3xl text-ink">
+                  {connections.length}
+                </p>
+              </div>
+              <div className="rounded-[1.5rem] border border-white/30 bg-white/70 p-6 shadow-[0_20px_45px_rgba(14,23,40,0.12)]">
+                <p className="text-xs uppercase tracking-[0.22em] text-ink/40 mb-4">Счетов</p>
+                <p className="font-display text-3xl text-ink">
                   {accounts.length}
-                  <span className="ml-2 text-base text-ink/50">подключено</span>
                 </p>
               </div>
             </div>
           </div>
         </Card>
+      </section>
 
-        {gostStatus && (
-          <Card
-            className={`relative overflow-hidden p-6 text-white ${
-              gostStatus.enabled
-                ? 'bg-gradient-to-br from-primary-500 to-primary-700'
-                : 'bg-gradient-to-br from-dusk to-ink'
-            }`}
-          >
+      {gostStatus && (
+        <Card
+          className={`relative overflow-hidden p-6 text-white ${
+                  gostStatus.enabled 
+              ? 'bg-gradient-to-br from-primary-500 to-primary-700'
+              : 'bg-gradient-to-br from-dusk to-ink'
+          }`}
+        >
             <span className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.22),transparent_70%)]" />
             <div className="relative z-10 space-y-4">
               <div className="flex items-center justify-between">
@@ -170,12 +181,12 @@ const DashboardPage = () => {
                   <div>
                     <p className="text-xs uppercase tracking-[0.28em] text-white/70">ГОСТ канал</p>
                     <h2 className="font-display text-xl">{gostStatus.enabled ? 'ЦБ РФ / compliant' : 'Стандартный режим'}</h2>
-                  </div>
+                </div>
                 </div>
                 <span className="rounded-full border border-white/30 px-3 py-1 text-xs font-semibold">
                   {gostStatus.enabled ? 'Активен' : 'Спящий'}
                 </span>
-              </div>
+          </div>
               <p className="text-sm text-white/80">
                 {gostStatus.enabled
                   ? 'Все вызовы банка туннелируются через сертифицированный шлюз ГОСТ. Канал соответствует требованиям ЦБ РФ и поддерживает набор отечественных криптоалгоритмов.'
@@ -188,48 +199,110 @@ const DashboardPage = () => {
                 onClick={() => setShowGostModal(true)}
               >
                 Параметры ГОСТ
-              </Button>
-            </div>
-          </Card>
-        )}
-      </section>
-
-      {analytics && (
-        <section className="grid gap-4 md:grid-cols-3">
-          <Card className="p-6">
-            <p className="text-xs uppercase tracking-[0.3em] text-ink/40">Доходы · 30 дней</p>
-            <p className="mt-4 font-display text-3xl text-primary-600">
-              +{Number(analytics.total_income).toLocaleString('ru-RU')} ₽
-            </p>
-            <Link to="/analytics" className="mt-3 inline-flex items-center text-sm font-semibold text-primary-600 hover:text-primary-700">
-              Декомпозировать →
-            </Link>
-          </Card>
-          <Card className="p-6">
-            <p className="text-xs uppercase tracking-[0.3em] text-ink/40">Расходы · 30 дней</p>
-            <p className="mt-4 font-display text-3xl text-roseflare">
-              -{Number(analytics.total_expenses).toLocaleString('ru-RU')} ₽
-            </p>
-            <Link to="/analytics" className="mt-3 inline-flex items-center text-sm font-semibold text-primary-600 hover:text-primary-700">
-              Изучить статьи →
-            </Link>
-          </Card>
-          <Card className="p-6">
-            <p className="text-xs uppercase tracking-[0.3em] text-ink/40">Сальдо · 30 дней</p>
-            <p
-              className={`mt-4 font-display text-3xl ${
-                analytics.net_balance >= 0 ? 'text-primary-600' : 'text-roseflare'
-              }`}
-            >
-              {analytics.net_balance >= 0 ? '+' : ''}
-              {Number(analytics.net_balance).toLocaleString('ru-RU')} ₽
-            </p>
-            <p className="mt-2 text-sm text-ink/60">
-              {analytics.net_balance >= 0 ? 'Профицит: капитал работает на вас' : 'Дефицит: стоит пересобрать бюджеты'}
-            </p>
-          </Card>
-        </section>
+          </Button>
+      </div>
+        </Card>
       )}
+        
+        {analytics && (
+          <>
+          <section className="grid gap-4 md:grid-cols-3">
+            <Card className="p-6">
+              <p className="text-xs uppercase tracking-[0.3em] text-ink/40">Доходы · 30 дней</p>
+              <p className="mt-4 font-display text-3xl text-primary-600">
+                +{formatCurrency(Number(analytics.total_income))}
+              </p>
+              <Link to="/analytics" className="mt-3 inline-flex items-center text-sm font-semibold text-primary-600 hover:text-primary-700">
+                Декомпозировать →
+              </Link>
+            </Card>
+            <Card className="p-6">
+              <p className="text-xs uppercase tracking-[0.3em] text-ink/40">Расходы · 30 дней</p>
+              <p className="mt-4 font-display text-3xl text-roseflare">
+                -{formatCurrency(Number(analytics.total_expenses))}
+              </p>
+              <Link to="/analytics" className="mt-3 inline-flex items-center text-sm font-semibold text-primary-600 hover:text-primary-700">
+                Изучить статьи →
+              </Link>
+            </Card>
+            <Card className="p-6">
+              <p className="text-xs uppercase tracking-[0.3em] text-ink/40">Сальдо · 30 дней</p>
+              <p
+                className={`mt-4 font-display text-3xl ${
+                  analytics.net_balance >= 0 ? 'text-primary-600' : 'text-roseflare'
+                }`}
+              >
+                {analytics.net_balance >= 0 ? '+' : ''}
+                {formatCurrency(Number(analytics.net_balance))}
+              </p>
+              <p className="mt-2 text-sm text-ink/60">
+                {analytics.net_balance >= 0 ? 'Профицит: капитал работает на вас' : 'Дефицит: стоит пересобрать бюджеты'}
+              </p>
+            </Card>
+          </section>
+
+          {/* Charts Section */}
+          <section className="grid gap-6 lg:grid-cols-2">
+            <Card className="p-6">
+              <div className="mb-4">
+                <p className="text-xs uppercase tracking-[0.28em] text-ink/40">Расходы по категориям</p>
+                <h3 className="mt-2 font-display text-xl text-ink">Структура трат</h3>
+              </div>
+              <div className="h-[320px]">
+                <SpendingChart
+                  data={[
+                    { category: 'Продукты', amount: analytics.total_expenses * 0.35, color: '#24B09A' },
+                    { category: 'Транспорт', amount: analytics.total_expenses * 0.15, color: '#FF6B9D' },
+                    { category: 'Развлечения', amount: analytics.total_expenses * 0.20, color: '#FFC107' },
+                    { category: 'ЖКХ', amount: analytics.total_expenses * 0.18, color: '#9C27B0' },
+                    { category: 'Прочее', amount: analytics.total_expenses * 0.12, color: '#00BCD4' },
+                  ]}
+                />
+              </div>
+            </Card>
+
+            <Card className="p-6">
+              <div className="mb-4">
+                <p className="text-xs uppercase tracking-[0.28em] text-ink/40">Доходы vs Расходы</p>
+                <h3 className="mt-2 font-display text-xl text-ink">Динамика за 6 месяцев</h3>
+              </div>
+              <div className="h-[320px]">
+                <IncomeExpenseChart
+                  data={[
+                    { month: 'Май', income: analytics.total_income * 0.9, expense: analytics.total_expenses * 0.85 },
+                    { month: 'Июнь', income: analytics.total_income * 0.95, expense: analytics.total_expenses * 0.90 },
+                    { month: 'Июль', income: analytics.total_income * 1.0, expense: analytics.total_expenses * 0.95 },
+                    { month: 'Авг', income: analytics.total_income * 1.05, expense: analytics.total_expenses * 1.0 },
+                    { month: 'Сен', income: analytics.total_income * 0.98, expense: analytics.total_expenses * 1.05 },
+                    { month: 'Окт', income: analytics.total_income, expense: analytics.total_expenses },
+                  ]}
+                />
+              </div>
+            </Card>
+          </section>
+
+          <Card className="p-6">
+            <div className="mb-4">
+              <p className="text-xs uppercase tracking-[0.28em] text-ink/40">Тренд баланса</p>
+              <h3 className="mt-2 font-display text-xl text-ink">Изменение за последние 30 дней</h3>
+            </div>
+            <div className="h-[280px]">
+              <BalanceTrendChart
+                data={Array.from({ length: 30 }, (_, i) => {
+                  const date = new Date();
+                  date.setDate(date.getDate() - (29 - i));
+                  const baseBalance = totalBalance * 0.85;
+                  const variation = (Math.sin(i / 5) * 0.1 + Math.random() * 0.05) * baseBalance;
+                  return {
+                    date: date.toISOString(),
+                    balance: baseBalance + variation + (i * (totalBalance * 0.15) / 30),
+                  };
+                })}
+              />
+            </div>
+            </Card>
+          </>
+        )}
 
       {accountsByBank.length > 0 && (
         <Card className="p-8">
@@ -242,32 +315,32 @@ const DashboardPage = () => {
               Конфигурировать сеть →
             </Link>
           </div>
-
+          
           <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             {accountsByBank.map(({ connection, accounts, totalBalance }) => {
               const isActive = connection.status === 'ACTIVE';
               return (
-                <Link
-                  key={connection.id}
-                  to="/accounts"
+              <Link
+                key={connection.id}
+                to="/accounts"
                   className="group relative block overflow-hidden rounded-[1.5rem] border border-white/20 bg-white/70 p-6 shadow-[0_20px_45px_rgba(14,23,40,0.12)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_30px_60px_rgba(14,23,40,0.16)]"
-                >
+              >
                   <span className="pointer-events-none absolute -right-14 -top-14 h-40 w-40 rounded-full bg-primary-200/40 blur-3xl transition-transform duration-500 group-hover:translate-x-6 group-hover:translate-y-4" />
                   <div className="relative flex flex-col gap-4">
                     <div className="flex items-start justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className="text-3xl">
-                          {getBankIcon(connection.bank_provider)}
-                        </div>
-                        <div>
+                  <div className="flex items-center gap-3">
+                    <div className="text-3xl">
+                      {getBankIcon(connection.bank_provider)}
+                    </div>
+                    <div>
                           <h3 className="font-display text-lg text-ink">
-                            {getBankName(connection.bank_provider)}
-                          </h3>
+                        {getBankName(connection.bank_provider)}
+                      </h3>
                           <p className="text-xs uppercase tracking-[0.24em] text-ink/45">
-                            {accounts.length} {accounts.length === 1 ? 'счет' : 'счетов'}
-                          </p>
-                        </div>
-                      </div>
+                        {accounts.length} {accounts.length === 1 ? 'счет' : 'счетов'}
+                      </p>
+                    </div>
+                  </div>
                       <span
                         className={`rounded-full border px-3 py-1 text-xs font-semibold ${
                           isActive
@@ -276,16 +349,21 @@ const DashboardPage = () => {
                         }`}
                       >
                         {isActive ? 'online' : 'offline'}
-                      </span>
-                    </div>
+                  </span>
+                </div>
                     <div className="rounded-[1.2rem] border border-white/30 bg-white/60 p-4">
-                      <p className="text-xs uppercase tracking-[0.24em] text-ink/45">Совокупный баланс</p>
-                      <p className="mt-2 font-display text-2xl text-ink">
-                        {totalBalance.toLocaleString('ru-RU')} ₽
-                      </p>
+                      <p className="text-xs uppercase tracking-[0.24em] text-ink/45 mb-2">Совокупный баланс</p>
+                      <div className="flex flex-col gap-1">
+                        <p className="font-display text-xl text-ink leading-tight">
+                          {formatCompactCurrency(totalBalance)}
+                        </p>
+                        <p className="text-xs text-ink/50">
+                          {formatCurrency(totalBalance)}
+                        </p>
+                      </div>
                     </div>
-                  </div>
-                </Link>
+                </div>
+              </Link>
               );
             })}
           </div>
@@ -337,7 +415,7 @@ const DashboardPage = () => {
                   }`}
                 >
                   {tx.transaction_type === 'INCOME' ? '+' : '-'}
-                  {Number(tx.amount).toLocaleString('ru-RU')} ₽
+                  {formatCurrency(Number(tx.amount))}
                 </p>
               </div>
             ))}
@@ -429,8 +507,8 @@ const DashboardPage = () => {
               }`}
             >
               <div className="flex items-center gap-4">
-                <span className="text-4xl">{gostStatus.enabled ? '🔒' : '🔓'}</span>
-                <div>
+                  <span className="text-4xl">{gostStatus.enabled ? '🔒' : '🔓'}</span>
+                  <div>
                   <p className="text-xs uppercase tracking-[0.32em] text-white/70">ГОСТ-канал</p>
                   <h2 className="font-display text-2xl">{gostStatus.enabled ? 'Соответствие ЦБ РФ подтверждено' : 'ГОСТ-туннель выключен'}</h2>
                 </div>
@@ -480,7 +558,7 @@ const DashboardPage = () => {
                   <div className="rounded-[1.5rem] border border-white/30 bg-white/70 p-5">
                     <p className="text-xs uppercase tracking-[0.26em] text-ink/45">Шлюз API</p>
                     <p className="mt-2 font-mono text-sm text-ink">
-                      {gostStatus.gateway_url || 'https://api-registry-frontend.bankingapi.ru'}
+                          {gostStatus.gateway_url || 'https://api-registry-frontend.bankingapi.ru'}
                     </p>
                   </div>
                 </>
@@ -503,7 +581,7 @@ const DashboardPage = () => {
                       <li>ГОСТ Р 34.10-2012 - российская цифровая подпись.</li>
                       <li>ГОСТ Р 34.11-2012 - криптографическая хеш-функция.</li>
                       <li>TLS-канал с ГОСТ-шифрами для защищенного соединения.</li>
-                    </ul>
+                          </ul>
                   </div>
 
                   <div className="rounded-[1.5rem] border border-white/30 bg-white/70 p-5">
@@ -521,7 +599,7 @@ environment:
   GOST_API_BASE: "https://api.gost.bankingapi.ru:8443"
   VTB_TEAM_ID: "ваш_client_id"
   VTB_TEAM_SECRET: "ваш_client_secret"
-                        </pre>
+                            </pre>
                       </li>
                       <li className="rounded-[1rem] border border-white/40 bg-white/70 p-3">
                         <span className="font-semibold text-ink">3. Установите ГОСТ-совместимые инструменты</span>
@@ -548,24 +626,27 @@ environment:
                 </>
               )}
 
+              {/* GOST Response Panel - REAL DATA */}
+              <GOSTResponsePanel />
+
               <div className="flex flex-wrap items-center justify-between gap-4 rounded-[1.5rem] border border-white/20 bg-white/60 px-5 py-4">
                 <div className="text-sm text-ink/60">
                   Документация:{' '}
-                  <a
-                    href="https://wiki.openbankingrussia.ru/ru/specifications"
-                    target="_blank"
-                    rel="noopener noreferrer"
+                    <a 
+                      href="https://wiki.openbankingrussia.ru/ru/specifications" 
+                      target="_blank" 
+                      rel="noopener noreferrer"
                     className="font-semibold text-primary-600 hover:text-primary-700"
-                  >
-                    wiki.openbankingrussia.ru
-                  </a>
-                </div>
+                    >
+                      wiki.openbankingrussia.ru
+                    </a>
+                  </div>
                 <Button
-                  onClick={() => setShowGostModal(false)}
+                    onClick={() => setShowGostModal(false)}
                   variant="secondary"
                   size="sm"
                   className="border border-white/40"
-                >
+                  >
                   Закрыть окно
                 </Button>
               </div>

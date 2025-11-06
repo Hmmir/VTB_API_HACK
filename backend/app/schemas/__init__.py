@@ -17,6 +17,26 @@ from app.schemas.consent import (
     ConsentListResponse,
     PartnerBankResponse,
 )
+from app.schemas.payment import (
+    PaymentCreate,
+    PaymentResponse,
+    InterbankTransferCreate,
+    InterbankTransferResponse,
+    InterbankTransferStatusUpdate,
+    InternalTransferRequest,
+    InternalTransferResponse,
+)
+from app.schemas.product_agreement import (
+    ProductAgreementCreate,
+    ProductAgreementSign,
+    ProductAgreementResponse,
+    ProductAgreementWithSchedule,
+    PaymentScheduleResponse,
+    AgreementEventResponse,
+    AgreementListResponse,
+    MakePaymentRequest,
+    AgreementCloseRequest,
+)
 
 __all__ = [
     "UserCreate",
@@ -43,5 +63,21 @@ __all__ = [
     "ConsentEventResponse",
     "ConsentListResponse",
     "PartnerBankResponse",
+    "PaymentCreate",
+    "PaymentResponse",
+    "InterbankTransferCreate",
+    "InterbankTransferResponse",
+    "InterbankTransferStatusUpdate",
+    "InternalTransferRequest",
+    "InternalTransferResponse",
+    "ProductAgreementCreate",
+    "ProductAgreementSign",
+    "ProductAgreementResponse",
+    "ProductAgreementWithSchedule",
+    "PaymentScheduleResponse",
+    "AgreementEventResponse",
+    "AgreementListResponse",
+    "MakePaymentRequest",
+    "AgreementCloseRequest",
 ]
 

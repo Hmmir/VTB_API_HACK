@@ -32,7 +32,7 @@ type ConsentState = {
   gostAck: boolean;
 };
 
-const CLIENT_OPTIONS = Array.from({ length: 10 }, (_, index) => String(index + 1));
+// Removed CLIENT_OPTIONS - auto-connect uses current user
 
 const OAUTH_SCOPES = [
   {
@@ -71,7 +71,6 @@ const createConsentState = (isGost: boolean): ConsentState => ({
 export function ConnectBankModal({ open, onClose, onConnected }: ConnectBankModalProps) {
   const [banks, setBanks] = useState<BankInfo[]>([]);
   const [loading, setLoading] = useState(false);
-  const [clientNumber, setClientNumber] = useState('1');
   const [isGostMode, setIsGostMode] = useState(false);
   const [step, setStep] = useState<Step>('select');
   const [selectedBank, setSelectedBank] = useState<BankInfo | null>(null);
@@ -84,14 +83,13 @@ export function ConnectBankModal({ open, onClose, onConnected }: ConnectBankModa
 
     setStep('select');
     setSelectedBank(null);
-    setClientNumber('1');
     setConsentState(createConsentState(isGostMode));
 
     (async () => {
       try {
         const res = await api.getAvailableBanks();
         setBanks(res.banks || []);
-
+        
         const user = await api.getCurrentUser();
         const gost = Boolean(user.use_gost_mode);
         setIsGostMode(gost);
@@ -139,7 +137,7 @@ export function ConnectBankModal({ open, onClose, onConnected }: ConnectBankModa
 
     setLoading(true);
     try {
-      await api.connectBankDemo(selectedBank.code, clientNumber);
+      await api.connectBankDemo(selectedBank.code, '0'); // Use auto-assigned client
       toast.success('Банк подключен');
 
       const event: SecurityEventPayload = {
@@ -147,7 +145,7 @@ export function ConnectBankModal({ open, onClose, onConnected }: ConnectBankModa
         description: isGostMode
           ? 'ГОСТ-туннель активирован, токены зашифрованы по ГОСТ Р 34.10-2012.'
           : 'OAuth-сессия sandbox завершена, токены сохранены локально.',
-        meta: `Клиент: team075-${clientNumber}`
+        meta: 'Счета синхронизированы'
       };
 
       onConnected?.(event);
@@ -173,23 +171,7 @@ export function ConnectBankModal({ open, onClose, onConnected }: ConnectBankModa
               <p className="font-semibold text-ink">
                 {isGostMode ? '🔒 ГОСТ режим активирован' : '🧪 Sandbox подключение'}
               </p>
-              <p className="mt-2">Выберите банк, чтобы инициировать симулированный OAuth поток. Клиент team075-х будет использован для подключения.</p>
-            </div>
-
-            <div className="space-y-3">
-              <label className="text-xs uppercase tracking-[0.28em] text-ink/45">Team клиент (1-10)</label>
-              <select
-                value={clientNumber}
-                onChange={(e) => setClientNumber(e.target.value)}
-                className="input-field"
-              >
-                {CLIENT_OPTIONS.map((option) => (
-                  <option key={option} value={option}>
-                    team075-{option}
-                  </option>
-                ))}
-              </select>
-              <p className="text-xs text-ink/45">Разные номера эмулируют сотрудников, VIP клиентов и предпринимателей.</p>
+              <p className="mt-2">Выберите банк для подключения. Система автоматически синхронизирует счета текущего пользователя.</p>
             </div>
 
             <div className="grid gap-3 sm:grid-cols-3">
@@ -215,7 +197,7 @@ export function ConnectBankModal({ open, onClose, onConnected }: ConnectBankModa
               <div>
                 <p className="text-xs uppercase tracking-[0.28em] text-ink/45">Редирект</p>
                 <h3 className="text-xl font-semibold text-ink">{selectedBank.name}</h3>
-                <p className="mt-1 text-xs text-ink/50">Клиент: team075-{clientNumber}</p>
+                <p className="mt-1 text-xs text-ink/50">OAuth 2.0 / OpenID Connect</p>
               </div>
               <Button variant="ghost" size="sm" onClick={handleReset} className="border border-white/40 bg-white/60 text-ink">
                 Назад
@@ -280,8 +262,8 @@ export function ConnectBankModal({ open, onClose, onConnected }: ConnectBankModa
               <p className="text-lg font-semibold text-ink">Подключение завершено</p>
               <p className="mt-1 text-xs text-ink/55">
                 Трансфер ключей завершен {isGostMode ? 'через ГОСТ-шлюз. Сессия подписана.' : 'в sandbox-режиме.'} Журнал безопасности обновлен.
-              </p>
-            </div>
+          </p>
+        </div>
 
             <div className="space-y-3">
               <p className="text-xs uppercase tracking-[0.28em] text-ink/45">Хендшейк</p>
@@ -303,7 +285,7 @@ export function ConnectBankModal({ open, onClose, onConnected }: ConnectBankModa
                 Перейти к счетам
               </Button>
             </div>
-          </div>
+        </div>
         )}
       </div>
     </Modal>

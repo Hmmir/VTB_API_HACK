@@ -82,12 +82,17 @@ const GoalsPage = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
+      // Преобразуем дату в ISO формат если указана
+      const targetDateTime = formData.target_date 
+        ? new Date(formData.target_date + 'T23:59:59').toISOString()
+        : undefined;
+      
       await api.createGoal({
         name: formData.name,
         description: formData.description || undefined,
         target_amount: Number(formData.target_amount),
         current_amount: Number(formData.current_amount),
-        target_date: formData.target_date || undefined,
+        target_date: targetDateTime,
         status: 'IN_PROGRESS'
       });
       toast.success('Цель создана!');
@@ -287,10 +292,10 @@ const GoalsPage = () => {
               <p className="text-sm text-ink/60">Опишите цель - и мы подберем стратегию накоплений, прогнозы и нотификации.</p>
               <Button size="lg" variant="primary" onClick={() => setShowCreateModal(true)}>
                 Задать цель
-              </Button>
-            </div>
-          </Card>
-        ) : (
+            </Button>
+          </div>
+        </Card>
+      ) : (
           <div className="grid gap-6 lg:grid-cols-2">
             {enrichedGoals.map((goal) => {
               const config = getStatusConfig(goal.status);
@@ -309,7 +314,7 @@ const GoalsPage = () => {
                           <p className="text-xs text-ink/45">
                             Осталось {goal.daysLeft >= 0 ? `${goal.daysLeft} дней` : 'время вышло - пересмотрите стратегию'}
                           </p>
-                        )}
+                      )}
                     </div>
                       <span className={`rounded-full px-3 py-1 text-xs font-semibold ${config.badge}`}>
                         {goal.status === 'COMPLETED' ? 'Достигнута' : goal.status === 'CANCELLED' ? 'Пауза' : 'В процессе'}
@@ -335,18 +340,18 @@ const GoalsPage = () => {
                         <div>
                           <p>Накоплено</p>
                           <p className="mt-1 font-semibold text-ink">{formatCurrency(goal.current_amount)} ₽</p>
-                        </div>
-                        <div>
+                  </div>
+                    <div>
                           <p>Цель</p>
                           <p className="mt-1 font-semibold text-ink">{formatCurrency(goal.target_amount)} ₽</p>
-                  </div>
+                    </div>
                     <div>
                           <p>Осталось</p>
                           <p className={`mt-1 font-semibold ${goal.remaining <= 0 ? 'text-primary-700' : 'text-ink'}`}>
                             {formatCurrency(goal.remaining)} ₽
                       </p>
                     </div>
-                      </div>
+                    </div>
                   </div>
 
                     <div className="space-y-3 rounded-[1.1rem] border border-white/40 bg-white/60 px-4 py-3 text-xs text-ink/60">
@@ -451,7 +456,7 @@ const GoalsPage = () => {
               </Button>
             <Button type="submit" variant="primary">
               Сохранить
-            </Button>
+              </Button>
           </div>
         </form>
       </Modal>
@@ -485,14 +490,14 @@ const GoalsPage = () => {
           )}
 
           <div className="flex justify-end gap-2">
-            <Button
-              type="button"
+              <Button
+                type="button"
               variant="ghost"
               onClick={() => setContributionGoal(null)}
               className="border border-white/40 bg-white/60 text-xs uppercase tracking-[0.26em] text-ink/70"
-            >
-              Отмена
-            </Button>
+              >
+                Отмена
+              </Button>
             <Button type="submit" variant="primary">
               Внести
             </Button>

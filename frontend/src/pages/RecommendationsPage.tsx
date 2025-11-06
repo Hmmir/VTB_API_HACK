@@ -48,6 +48,7 @@ const RecommendationsPage = () => {
   const loadRecommendations = async () => {
     try {
       const data = await api.getRecommendations();
+      console.log('Recommendations data:', data);
       const mapped: RecommendationView[] = (data || []).map((rec: any, index: number) => {
         const priorityValue = typeof rec.priority === 'number' ? rec.priority : 0;
         const priority: RecommendationView['priority'] = priorityValue >= 2 ? 'high' : priorityValue === 1 ? 'medium' : 'low';
@@ -64,6 +65,8 @@ const RecommendationsPage = () => {
       });
       setRecommendations(mapped);
     } catch (error) {
+      console.error('Recommendations error:', error);
+      setRecommendations([]);
       toast.error('Не удалось загрузить рекомендации');
     } finally {
       setLoading(false);

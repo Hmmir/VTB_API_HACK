@@ -114,6 +114,10 @@ def transfer_between_accounts(
         source_account.balance = source_account.balance - amount
         destination_account.balance = destination_account.balance + amount
 
+        # Создаем читаемые имена счетов
+        dest_name = destination_account.account_name or f"счет {destination_account.id}"
+        src_name = source_account.account_name or f"счет {source_account.id}"
+        
         debit_transaction = Transaction(
             account_id=source_account.id,
             category_id=None,
@@ -121,7 +125,7 @@ def transfer_between_accounts(
             amount=-amount,
             currency=source_account.currency.value if hasattr(source_account.currency, "value") else source_account.currency,
             transaction_type=TransactionType.TRANSFER,
-            description=transfer.description or f"Перевод на счет {destination_account.account_name}",
+            description=transfer.description or f"Перевод на {dest_name}",
             merchant=None,
             transaction_date=now,
             is_pending=0
@@ -134,7 +138,7 @@ def transfer_between_accounts(
             amount=amount,
             currency=destination_account.currency.value if hasattr(destination_account.currency, "value") else destination_account.currency,
             transaction_type=TransactionType.TRANSFER,
-            description=transfer.description or f"Перевод со счета {source_account.account_name}",
+            description=transfer.description or f"Перевод с {src_name}",
             merchant=None,
             transaction_date=now,
             is_pending=0

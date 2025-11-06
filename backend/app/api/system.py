@@ -2,10 +2,16 @@
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 from typing import Dict
+from sqlalchemy.orm import Session
+from sqlalchemy import func
 
 from app.config import settings
 from app.api.dependencies import get_current_user
 from app.models.user import User
+from app.models.account import Account
+from app.models.transaction import Transaction
+from app.models.bank_connection import BankConnection
+from app.database import get_db
 
 
 router = APIRouter(prefix="/system", tags=["System"])
@@ -50,6 +56,40 @@ async def get_system_info(current_user: User = Depends(get_current_user)):
             "pwa": True,
         }
     )
+
+
+@router.get("/admin-stats")
+async def get_admin_stats(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Get admin statistics from database.
+    
+    Returns real statistics about:
+    - Total users
+    - Total bank connections
+    - Total accounts
+    - Total transactions
+    """
+    # Count users
+    total_users = db.query(func.count(User.id)).scalar() or 0
+    
+    # Count bank connections
+    total_connections = db.query(func.count(BankConnection.id)).scalar() or 0
+    
+    # Count accounts
+    total_accounts = db.query(func.count(Account.id)).scalar() or 0
+    
+    # Count transactions
+    total_transactions = db.query(func.count(Transaction.id)).scalar() or 0
+    
+    return {
+        "users": total_users,
+        "banks": 3,  # vbank, abank, sbank
+        "connections": total_connections,
+        "accounts": total_accounts,
+        "transactions": total_transactions,
+    }
 
 
 @router.get("/gost-status")

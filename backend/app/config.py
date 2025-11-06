@@ -1,74 +1,52 @@
-"""Application configuration."""
+"""Application configuration using pydantic settings."""
 from pydantic_settings import BaseSettings
-from typing import List
+from typing import Optional
 
 
 class Settings(BaseSettings):
-    """Application settings."""
+    """Application settings loaded from environment variables."""
     
-    # Application
-    APP_NAME: str = "FinanceHub API"
+    # App
+    APP_NAME: str = "FinanceHub"
     APP_VERSION: str = "1.0.0"
     DEBUG: bool = False
     
     # Database
-    DATABASE_URL: str
+    DATABASE_URL: str = "postgresql://financehub_user:financehub_password@localhost:5432/financehub"
     
-    # Redis
-    REDIS_URL: str
-    
-    # JWT
-    SECRET_KEY: str
+    # Security
+    SECRET_KEY: str = "your-secret-key-change-in-production"
     ALGORITHM: str = "HS256"
+    ENCRYPTION_KEY: str = "your-32-char-encryption-key-here!"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
     
-    # OpenBanking Russia Sandbox
-    VTB_TEAM_ID: str = ""  # Your client_id from HackAPI platform
-    VTB_TEAM_SECRET: str = ""  # Your client_secret from HackAPI platform
+    # VTB Open Banking
+    VTB_API_BASE_URL: str = "https://ift.rtuitlab.dev"
+    VTB_TEAM_ID: str = "team075"
+    VTB_TEAM_SECRET: str = "1IbEJkXNjswkQLNCqZiYW4mgVSvuC8Di"
     
-    # GOST Gateway Support
-    USE_GOST: bool = False  # Enable GOST-compliant TLS connection
+    # GOST Configuration
+    USE_GOST: bool = False
     GOST_API_BASE: str = "https://api.gost.bankingapi.ru:8443"
-    GOST_AUTH_URL: str = "https://auth.bankingapi.ru/auth/realms/kubernetes/protocol/openid-connect/token"
     
-    # Non-GOST API (regular sandbox)
-    OPENBANKING_API_BASE: str = "https://api.bankingapi.ru"
-    
-    # Bank URLs (OpenBanking Russia Sandbox)
-    # If USE_GOST=True, will use GOST_API_BASE instead
-    VBANK_API_URL: str = "https://vbank.open.bankingapi.ru"
-    ABANK_API_URL: str = "https://abank.open.bankingapi.ru"
-    SBANK_API_URL: str = "https://sbank.open.bankingapi.ru"
-    
-    # Default bank for demo
-    DEFAULT_BANK: str = "vbank"
-    
-    # Encryption
-    ENCRYPTION_KEY: str
+    # Banking API URLs
+    BANKING_API_URL: str = "https://api.bankingapi.ru"
+    AUTH_API_URL: str = "https://auth.bankingapi.ru/auth/realms/kubernetes/protocol/openid-connect/token"
     
     # CORS
-    CORS_ORIGINS: str = "http://localhost:3000,http://localhost:8000"
+    CORS_ORIGINS: str = "http://localhost:3000,http://localhost:5173,http://127.0.0.1:3000,http://127.0.0.1:5173"
     
     @property
-    def cors_origins_list(self) -> List[str]:
-        """Parse CORS origins from comma-separated string."""
+    def cors_origins_list(self) -> list[str]:
+        """Parse CORS_ORIGINS from comma-separated string to list."""
         return [origin.strip() for origin in self.CORS_ORIGINS.split(",")]
     
-    # Logging
-    LOG_LEVEL: str = "INFO"
-    
-    # Rate Limiting
-    RATE_LIMIT_PER_MINUTE: int = 100
-    
-    # Cache
-    CACHE_TTL: int = 3600  # 1 hour
-    
-    class Config:
-        env_file = ".env"
-        case_sensitive = True
-        extra = "allow"
+    model_config = {
+        "env_file": ".env",
+        "case_sensitive": True,
+        "extra": "ignore"  # Ignore extra fields from .env
+    }
 
 
 settings = Settings()
-

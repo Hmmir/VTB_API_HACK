@@ -90,8 +90,8 @@ class AuthService:
                 detail="User account is inactive"
             )
         
-        # Auto-connect banks for team075-X users
-        if user.email.startswith("team075-") and not user.email.endswith("-demo@financehub.ru"):
+        # Auto-connect banks for team075-X users and demo user
+        if (user.email.startswith("team075-") and not user.email.endswith("-demo@financehub.ru")) or user.email == "demo@financehub.ru":
             from app.services.auto_connect_service import AutoConnectService
             try:
                 await AutoConnectService.auto_connect_team_client(db, user)

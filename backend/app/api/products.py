@@ -19,42 +19,45 @@ async def get_products(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """Get bank products from all connected banks or specific bank."""
+    """Get bank products from all banks (public data, no auth required)."""
     
-    # Get user's connections
-    query = db.query(BankConnection).filter(
-        BankConnection.user_id == current_user.id,
-        BankConnection.status == 'ACTIVE'
-    )
+    # Products are public data - fetch from all banks without auth
+    banks_to_fetch = ['vbank', 'abank', 'sbank']
     
     if bank_code:
-        query = query.filter(BankConnection.bank_provider == bank_code.upper())
-    
-    connections = query.all()
-    
-    if not connections:
-        return {"products": []}
+        banks_to_fetch = [bank_code.lower()]
     
     all_products = []
     
-    for connection in connections:
+    for bank in banks_to_fetch:
         try:
-            # Decrypt token
-            client_token = decrypt_token(connection.access_token_encrypted)
-            
-            # Get products from bank
-            async with OpenBankingClient(connection.bank_provider.value.lower()) as client:
-                products_response = await client.get_products(client_token)
-                products_data = products_response.get("data", {}).get("product", [])
+            # Get products from bank (no token needed for public product catalog)
+            async with OpenBankingClient(bank) as client:
+                products_response = await client.get_products(access_token=None)
+                
+                # Handle different response formats
+                if isinstance(products_response, list):
+                    products_data = products_response
+                elif isinstance(products_response, dict):
+                    products_data = products_response.get("data", {})
+                    if isinstance(products_data, dict):
+                        products_data = products_data.get("product", [])
+                    elif not isinstance(products_data, list):
+                        products_data = []
+                else:
+                    products_data = []
                 
                 # Enrich with bank info
                 for product in products_data:
-                    product["bank_code"] = connection.bank_provider.value.lower()
+                    if not isinstance(product, dict):
+                        continue
+                    
+                    product["bank_code"] = bank
                     product["bank_name"] = {
                         "vbank": "Virtual Bank",
                         "abank": "Awesome Bank",
                         "sbank": "Smart Bank"
-                    }.get(connection.bank_provider.value.lower(), connection.bank_provider.value)
+                    }.get(bank, bank)
                     
                     # Filter by product type if specified (case-insensitive)
                     product_type_from_api = product.get("productType", "").upper()
@@ -64,7 +67,9 @@ async def get_products(
                         all_products.append(product)
         
         except Exception as e:
-            print(f"Error fetching products from {connection.bank_provider}: {e}")
+            print(f"Error fetching products from {bank}: {e}")
+            import traceback
+            traceback.print_exc()
             continue
     
     return {"products": all_products, "total": len(all_products)}

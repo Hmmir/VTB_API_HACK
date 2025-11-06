@@ -124,11 +124,18 @@ def delete_goal(
 @router.post("/{goal_id}/contribute")
 def contribute_to_goal(
     goal_id: int,
-    amount: float,
+    contribution: dict,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """Add contribution to goal."""
+    amount = contribution.get("amount")
+    if not amount:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Amount is required"
+        )
+    
     goal = db.query(Goal).filter(
         Goal.id == goal_id,
         Goal.user_id == current_user.id
@@ -140,7 +147,8 @@ def contribute_to_goal(
             detail="Goal not found"
         )
     
-    goal.current_amount += amount
+    from decimal import Decimal
+    goal.current_amount += Decimal(str(amount))
     
     # Auto-complete if target reached
     if goal.current_amount >= goal.target_amount:

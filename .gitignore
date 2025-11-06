@@ -95,3 +95,29 @@ spec-kit/
 # specs/
 # memory/
 
+# Exclude all markdown files in root except README.md
+/*.md
+!README.md
+
+# Exclude temporary files and packages
+*.zip
+*.ps1
+*.bat
+*.sh
+*.txt
+*.py
+!backend/**/*.py
+!frontend/**/*.py
+gost-gateway/
+temp_gost_extract/
+team075_gost_solution/
+docker/
+setup/
+examples/
+pdf2docx/
+hs_err_pid*.log
+Гост установка.zip
+ИНСТРУКЦИЯ_ДЛЯ_ПРОДАЖИ.md
+Dockerfile
+Dockerfile.windows
+

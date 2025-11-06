@@ -3,6 +3,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from app.config import settings
+from app.utils.error_handlers import setup_error_handlers
 
 # Create FastAPI app
 app = FastAPI(
@@ -21,6 +22,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Setup global error handlers
+setup_error_handlers(app)
 
 
 @app.get("/")
@@ -43,7 +47,7 @@ async def health_check():
 
 
 # Import API routers
-from app.api import auth, banks, accounts, transactions, analytics, budgets, recommendations, goals, products, system, gost, well_known, consents
+from app.api import auth, banks, accounts, transactions, analytics, budgets, recommendations, goals, products, system, gost, well_known, consents, payments, product_agreements, notifications, multibank, key_rate, bank_capital, unified_banking, banker
 from app.api import export as export_router
 
 # Register API routers
@@ -54,13 +58,21 @@ app.include_router(transactions.router, prefix="/api/v1/transactions", tags=["Tr
 app.include_router(analytics.router, prefix="/api/v1/analytics", tags=["Analytics"])
 app.include_router(budgets.router, prefix="/api/v1/budgets", tags=["Budgets"])
 app.include_router(goals.router, prefix="/api/v1/goals", tags=["Goals"])
+app.include_router(product_agreements.router, prefix="/api/v1/products", tags=["Product Agreements"])  # Должен быть ПЕРЕД products.router
 app.include_router(products.router, prefix="/api/v1/products", tags=["Products"])
 app.include_router(recommendations.router, prefix="/api/v1/recommendations", tags=["Recommendations"])
 app.include_router(export_router.router, prefix="/api/v1/export", tags=["Export"])
 app.include_router(consents.router, prefix="/api/v1/consents", tags=["Consents"])
+app.include_router(payments.router, prefix="/api/v1/payments", tags=["Payments"])
+app.include_router(notifications.router, prefix="/api/v1", tags=["Notifications"])
 app.include_router(system.router, prefix="/api/v1", tags=["System"])
 app.include_router(gost.router, prefix="/api/v1", tags=["GOST"])
+app.include_router(multibank.router, tags=["Multibank"])
+app.include_router(key_rate.router, tags=["Key Rate"])
+app.include_router(bank_capital.router, tags=["Bank Capital"])
 app.include_router(well_known.router, tags=["Well-Known"])
+app.include_router(unified_banking.router, prefix="/api/v1", tags=["Unified Banking"])
+app.include_router(banker.router, tags=["Banker"])
 
 # TODO: Add more routers as they are implemented
 # from app.api import goals, products, recommendations

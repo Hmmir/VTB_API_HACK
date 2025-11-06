@@ -16,6 +16,28 @@ from app.models.consent import (
     ConsentStatus,
     ConsentScope,
 )
+from app.models.payment import (
+    Payment,
+    PaymentType,
+    PaymentStatus,
+    InterbankTransfer,
+    InterbankTransferStatus,
+)
+from app.models.product_agreement import (
+    ProductAgreement,
+    ProductType,
+    AgreementStatus,
+    PaymentScheduleType,
+    PaymentSchedule,
+    AgreementEvent,
+)
+from app.models.notification import (
+    Notification,
+    NotificationType,
+    NotificationPriority,
+)
+from app.models.key_rate import KeyRateHistory
+from app.models.bank_capital import BankCapital
 
 __all__ = [
     "User",
@@ -33,5 +55,21 @@ __all__ = [
     "ConsentEvent",
     "ConsentStatus",
     "ConsentScope",
+    "Payment",
+    "PaymentType",
+    "PaymentStatus",
+    "InterbankTransfer",
+    "InterbankTransferStatus",
+    "ProductAgreement",
+    "ProductType",
+    "AgreementStatus",
+    "PaymentScheduleType",
+    "PaymentSchedule",
+    "AgreementEvent",
+    "Notification",
+    "NotificationType",
+    "NotificationPriority",
+    "KeyRateHistory",
+    "BankCapital",
 ]
 

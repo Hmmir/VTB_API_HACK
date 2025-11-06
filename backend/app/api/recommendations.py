@@ -55,19 +55,21 @@ def get_recommendations(
     
     # Recommendation 1: Deposit for large positive balance
     if total_balance > 50000:
+        balance_float = float(total_balance)
+        monthly_income = balance_float * 0.08 / 12
         recommendations.append({
             "id": "deposit-recommendation",
             "type": "deposit",
             "priority": "high",
             "title": "💰 Откройте депозит и получайте проценты",
-            "description": f"У вас на счетах {total_balance:,.0f} ₽. Разместив деньги на депозите под 8% годовых, вы будете получать ~{total_balance * 0.08 / 12:,.0f} ₽ в месяц.",
+            "description": f"У вас на счетах {balance_float:,.0f} ₽. Разместив деньги на депозите под 8% годовых, вы будете получать ~{monthly_income:,.0f} ₽ в месяц.",
             "action": "Открыть депозит",
-            "estimated_benefit": f"+{total_balance * 0.08 / 12:,.0f} ₽/мес",
+            "estimated_benefit": f"+{monthly_income:,.0f} ₽/мес",
             "details": {
-                "current_balance": float(total_balance),
+                "current_balance": balance_float,
                 "interest_rate": 8.0,
-                "monthly_income": float(total_balance * 0.08 / 12),
-                "yearly_income": float(total_balance * 0.08)
+                "monthly_income": monthly_income,
+                "yearly_income": balance_float * 0.08
             }
         })
     

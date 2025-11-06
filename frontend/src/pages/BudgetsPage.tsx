@@ -5,6 +5,7 @@ import Button from '../components/common/Button';
 import Modal from '../components/common/Modal';
 import toast from 'react-hot-toast';
 import type { Budget as BudgetType } from '../types';
+import { formatCurrency, formatCompactCurrency } from '../utils/formatters';
 
 type BudgetStatusDetails = {
   budget_id: number;
@@ -31,8 +32,6 @@ type BudgetRecord = BudgetType & {
   end_date: string;
 };
 
-const formatCurrency = (value: number) => value.toLocaleString('ru-RU');
-
 const BudgetsPage = () => {
   const [budgets, setBudgets] = useState<BudgetRecord[]>([]);
   const [budgetStatuses, setBudgetStatuses] = useState<Record<number, BudgetStatusDetails>>({});
@@ -40,6 +39,7 @@ const BudgetsPage = () => {
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [formData, setFormData] = useState({
+    name: '',
     category_id: '',
     amount: '',
     start_date: new Date().toISOString().split('T')[0],
@@ -70,8 +70,8 @@ const BudgetsPage = () => {
           try {
             const statusData = await api.getBudgetStatus(budget.id);
             return [budget.id, statusData as BudgetStatusDetails] as const;
-          } catch (error) {
-            console.error(`Failed to load status for budget ${budget.id}:`, error);
+        } catch (error) {
+          console.error(`Failed to load status for budget ${budget.id}:`, error);
             return [budget.id, undefined] as const;
           }
         })
@@ -85,6 +85,9 @@ const BudgetsPage = () => {
       }
       setBudgetStatuses(statuses);
     } catch (error) {
+      console.error('Budgets error:', error);
+      setCategories([]);
+      setBudgets([]);
       toast.error('Не удалось загрузить бюджеты');
     } finally {
       setLoading(false);
@@ -94,11 +97,16 @@ const BudgetsPage = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
+      // Преобразуем даты в ISO формат с временем
+      const startDateTime = new Date(formData.start_date + 'T00:00:00').toISOString();
+      const endDateTime = new Date(formData.end_date + 'T23:59:59').toISOString();
+      
       await api.createBudget({
+        name: formData.name,
         category_id: Number(formData.category_id),
         amount: Number(formData.amount),
-        start_date: formData.start_date,
-        end_date: formData.end_date,
+        start_date: startDateTime,
+        end_date: endDateTime,
       });
       toast.success('Бюджет создан!');
       setShowModal(false);
@@ -106,6 +114,7 @@ const BudgetsPage = () => {
       
       // Reset form
       setFormData({
+        name: '',
         category_id: '',
         amount: '',
         start_date: new Date().toISOString().split('T')[0],
@@ -255,7 +264,7 @@ const BudgetsPage = () => {
           <Button variant="ghost" size="sm" className="border border-white/40 bg-white/60 text-xs uppercase tracking-[0.26em] text-ink/60">
             План переноса лимитов
           </Button>
-        </div>
+      </div>
 
         {enrichedBudgets.length === 0 ? (
           <Card className="relative overflow-hidden bg-white/70 p-12 text-center">
@@ -268,10 +277,10 @@ const BudgetsPage = () => {
               </p>
               <Button size="lg" variant="primary" onClick={() => setShowModal(true)}>
                 Создать бюджет
-              </Button>
-            </div>
-          </Card>
-        ) : (
+            </Button>
+          </div>
+        </Card>
+      ) : (
           <div className="grid gap-6 lg:grid-cols-2">
             {enrichedBudgets.map((budget) => {
               const status = budget.status;
@@ -282,19 +291,19 @@ const BudgetsPage = () => {
                   : state === 'warning'
                   ? 'from-glow/25 via-white/70 to-white/60'
                   : 'from-primary-100/40 via-white/70 to-white/60';
-
-              return (
+            
+            return (
                 <Card key={budget.id} className={`relative overflow-hidden bg-gradient-to-br ${gradientClass} p-6`}>
                   <span className="pointer-events-none absolute -left-16 -top-24 h-48 w-48 rounded-full bg-white/30 blur-3xl" />
                   <div className="relative z-10 space-y-5">
                     <div className="flex items-start justify-between gap-4">
-                      <div>
+                    <div>
                         <p className="text-xs uppercase tracking-[0.28em] text-ink/40">Категория</p>
                         <h4 className="mt-1 text-xl font-semibold text-ink">{status?.category || budget.category?.name || 'Категория'}</h4>
-                        {status && (
+                      {status && (
                           <p className="mt-1 text-xs text-ink/45">{formatDateRange(status.period.start, status.period.end)}</p>
-                        )}
-                      </div>
+                      )}
+                    </div>
                       {status && (
                         <span
                           className={`rounded-full px-3 py-1 text-xs font-semibold ${
@@ -308,7 +317,7 @@ const BudgetsPage = () => {
                           {state === 'exceeded' ? 'Перерасход' : state === 'warning' ? 'Почти лимит' : 'Стабильно'}
                         </span>
                       )}
-                    </div>
+                  </div>
 
                     {status ? (
                       <>
@@ -316,7 +325,7 @@ const BudgetsPage = () => {
                           <div className="flex items-center justify-between text-xs text-ink/50">
                             <span>Потрачено</span>
                             <span className="font-semibold text-ink/70">{formatCurrency(status.spent)} ₽</span>
-                          </div>
+                        </div>
                           <div className="h-3 w-full overflow-hidden rounded-full bg-ink/10">
                             <div
                               className={`h-full rounded-full transition-all duration-500 ${
@@ -327,13 +336,13 @@ const BudgetsPage = () => {
                                   : 'bg-gradient-to-r from-primary-300 via-primary-500 to-primary-700'
                               }`}
                               style={{ width: `${Math.min(status.percentage, 130)}%` }}
-                            />
-                          </div>
+                          />
+                        </div>
                           <div className="grid grid-cols-3 gap-3 text-xs text-ink/55">
                             <div>
                               <p>Лимит</p>
                               <p className="mt-1 font-semibold text-ink">{formatCurrency(status.limit)} ₽</p>
-                            </div>
+                          </div>
                             <div>
                               <p>Осталось</p>
                               <p className={`mt-1 font-semibold ${status.remaining < 0 ? 'text-roseflare' : 'text-ink'}`}>
@@ -347,7 +356,7 @@ const BudgetsPage = () => {
                               </p>
                             </div>
                           </div>
-                        </div>
+                      </div>
 
                         <div className="flex flex-wrap items-center justify-between gap-3 border-t border-white/40 pt-4">
                           <div className="text-xs text-ink/55">
@@ -356,7 +365,7 @@ const BudgetsPage = () => {
                               : state === 'warning'
                               ? 'Рекомендуем включить уведомления о каждой крупной покупке.'
                               : 'Все в зелёной зоне. Можно сконцентрироваться на накоплениях.'}
-                          </div>
+                        </div>
                           <div className="flex items-center gap-2">
                             <Button
                               variant="ghost"
@@ -373,94 +382,106 @@ const BudgetsPage = () => {
                             >
                               Оптимизировать (Premium)
                             </Button>
-                          </div>
                         </div>
-                      </>
+                      </div>
+                    </>
                     ) : (
                       <div className="rounded-[1.1rem] border border-dashed border-white/40 bg-white/40 px-4 py-6 text-sm text-ink/50">
                         Данные ещё синхронизируются. Попробуйте обновить через пару минут.
                       </div>
-                    )}
-                  </div>
-                </Card>
-              );
-            })}
-          </div>
-        )}
+                  )}
+                </div>
+              </Card>
+            );
+          })}
+        </div>
+      )}
       </section>
 
       <Modal title="Создать бюджет" open={showModal} onClose={() => setShowModal(false)}>
         <form onSubmit={handleSubmit} className="space-y-5">
           <div className="space-y-2">
-            <label className="text-xs uppercase tracking-[0.28em] text-ink/45">Категория</label>
-            <select
-              value={formData.category_id}
-              onChange={(e) => setFormData({ ...formData, category_id: e.target.value })}
-              className="input-field"
-              required
-            >
-              <option value="">Выберите категорию</option>
-              {categories.map((category) => (
-                <option key={category.id} value={category.id}>
-                  {category.name}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="space-y-2">
-            <label className="text-xs uppercase tracking-[0.28em] text-ink/45">Лимит (₽)</label>
+            <label className="text-xs uppercase tracking-[0.28em] text-ink/45">Название бюджета</label>
             <input
-              type="number"
-              value={formData.amount}
-              onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
+              type="text"
+              value={formData.name}
+              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               className="input-field"
-              min="0"
+              placeholder="Например: Продукты на ноябрь"
               required
             />
           </div>
 
+          <div className="space-y-2">
+            <label className="text-xs uppercase tracking-[0.28em] text-ink/45">Категория</label>
+              <select
+                value={formData.category_id}
+                onChange={(e) => setFormData({ ...formData, category_id: e.target.value })}
+                className="input-field"
+                required
+              >
+                <option value="">Выберите категорию</option>
+              {categories.map((category) => (
+                <option key={category.id} value={category.id}>
+                  {category.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+          <div className="space-y-2">
+            <label className="text-xs uppercase tracking-[0.28em] text-ink/45">Лимит (₽)</label>
+              <input
+                type="number"
+                value={formData.amount}
+                onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
+                className="input-field"
+              min="0"
+                required
+              />
+            </div>
+
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <label className="text-xs uppercase tracking-[0.28em] text-ink/45">Начало периода</label>
-              <input
-                type="date"
-                value={formData.start_date}
-                onChange={(e) => setFormData({ ...formData, start_date: e.target.value })}
-                className="input-field"
-                required
-              />
-            </div>
+                <input
+                  type="date"
+                  value={formData.start_date}
+                  onChange={(e) => setFormData({ ...formData, start_date: e.target.value })}
+                  className="input-field"
+                  required
+                />
+              </div>
             <div className="space-y-2">
               <label className="text-xs uppercase tracking-[0.28em] text-ink/45">Конец периода</label>
-              <input
-                type="date"
-                value={formData.end_date}
-                onChange={(e) => setFormData({ ...formData, end_date: e.target.value })}
-                className="input-field"
-                required
-              />
+                <input
+                  type="date"
+                  value={formData.end_date}
+                  onChange={(e) => setFormData({ ...formData, end_date: e.target.value })}
+                  className="input-field"
+                  required
+                />
+              </div>
             </div>
-          </div>
 
           <div className="rounded-[1.1rem] border border-primary-100 bg-primary-50/70 px-4 py-3 text-xs text-ink/55">
             Premium-пользователи могут включить «Автопилот», чтобы перераспределять остатки между бюджетами автоматически.
           </div>
 
           <div className="flex justify-end gap-2">
-            <Button
-              type="button"
+              <Button
+                type="button"
               variant="ghost"
-              onClick={() => setShowModal(false)}
+                onClick={() => setShowModal(false)}
               className="border border-white/40 bg-white/60 text-xs uppercase tracking-[0.26em] text-ink/70"
-            >
-              Отмена
-            </Button>
+              >
+                Отмена
+              </Button>
             <Button type="submit" variant="primary">
               Сохранить
             </Button>
-          </div>
-        </form>
+            </div>
+          </form>
       </Modal>
     </div>
   );

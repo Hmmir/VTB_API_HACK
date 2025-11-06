@@ -6,8 +6,7 @@ import Card from '../components/common/Card';
 import ConnectBankModal, { type SecurityEventPayload } from '../components/accounts/ConnectBankModal';
 import Modal from '../components/common/Modal';
 import toast from 'react-hot-toast';
-
-const formatCurrency = (value: number) => value.toLocaleString('ru-RU', { maximumFractionDigits: 0 });
+import { formatCurrency, formatCompactCurrency } from '../utils/formatters';
 
 const BANK_NAMES: Record<string, string> = {
   vbank: 'Virtual Bank',
@@ -281,8 +280,8 @@ const AccountsPage = () => {
                   На платформе <span className="font-semibold text-primary-700">{connections.length}</span> банковских подключений и{' '}
                   <span className="font-semibold text-primary-700">{accounts.length}</span> активных счетов. Общий баланс -{' '}
                   <span className="font-semibold text-ink">{formatCurrency(totalBalance)} ₽</span>.
-                </p>
-              </div>
+          </p>
+        </div>
               <div className="flex flex-col items-stretch gap-3 rounded-[1.4rem] border border-white/30 bg-white/70 p-5 shadow-[0_20px_45px_rgba(14,23,40,0.12)]">
                 <div className="text-xs uppercase tracking-[0.32em] text-ink/40">Быстрые действия</div>
                 <Button variant="primary" size="lg" onClick={() => setConnectModalOpen(true)}>
@@ -329,8 +328,8 @@ const AccountsPage = () => {
             </ul>
             <Button variant="ghost" className="bg-white/20 text-white hover:bg-white/30">
               Подключить Premium 14 дней
-            </Button>
-          </div>
+        </Button>
+      </div>
         </Card>
       </section>
 
@@ -363,7 +362,7 @@ const AccountsPage = () => {
       )}
 
       <section className="space-y-6">
-        {connections.length === 0 ? (
+      {connections.length === 0 ? (
           <Card className="relative overflow-hidden bg-white/70 p-12 text-center">
             <span className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_10%_10%,rgba(36,176,154,0.15),transparent_65%)]" />
             <div className="relative z-10 space-y-4">
@@ -371,22 +370,22 @@ const AccountsPage = () => {
               <h4 className="text-2xl font-display text-ink">Подключите первый банк</h4>
               <p className="text-sm text-ink/60">Синхронизируйте счета, чтобы начать отображать весь денежный поток.</p>
               <Button size="lg" variant="primary" onClick={() => setConnectModalOpen(true)}>
-                Подключить банк
-              </Button>
-            </div>
-          </Card>
-        ) : (
+              Подключить банк
+            </Button>
+          </div>
+        </Card>
+      ) : (
           <div className="space-y-6">
             {enrichedConnections.map(({ connection, accounts: bankAccounts, totalBalance }) => {
-              const isExpanded = expandedBank === connection.bank_provider;
+            const isExpanded = expandedBank === connection.bank_provider;
               const gradient = isExpanded
                 ? 'from-primary-100/45 via-white/70 to-white/60'
                 : 'from-white/60 via-white/70 to-white/60';
-              const bankCode = connection.bank_provider.toLowerCase();
+            const bankCode = connection.bank_provider.toLowerCase();
               const bankName = BANK_NAMES[bankCode] || connection.bank_provider.toUpperCase();
               const bankIcon = BANK_ICONS[bankCode] || '🏦';
-
-              return (
+            
+            return (
                 <Card key={connection.id} className={`relative overflow-hidden bg-gradient-to-br ${gradient} p-6`}>
                   <span className="pointer-events-none absolute -left-16 -top-24 h-48 w-48 rounded-full bg-white/25 blur-3xl" />
                   <div className="relative z-10 space-y-5">
@@ -395,24 +394,24 @@ const AccountsPage = () => {
                         <p className="text-xs uppercase tracking-[0.28em] text-ink/40">Банк</p>
                         <h3 className="text-xl font-semibold text-ink">{bankIcon} {bankName}</h3>
                         <p className="text-sm text-ink/50">{bankAccounts.length} счет(а) • {formatCurrency(totalBalance)} ₽</p>
-                        {connection.last_synced_at && (
+                      {connection.last_synced_at && (
                           <p className="text-xs text-ink/40">Обновлено {new Date(connection.last_synced_at).toLocaleString('ru-RU')}</p>
-                        )}
-                      </div>
+                      )}
+                    </div>
                       <div className="flex flex-wrap gap-2">
                         <Button variant="ghost" size="sm" className="border border-white/40 bg-white/60 text-xs uppercase tracking-[0.22em] text-ink" onClick={() => handleSync(connection.id)}>
                           Синхронизировать
                         </Button>
                         <Button variant="ghost" size="sm" className="border border-white/40 bg-white/60 text-xs uppercase tracking-[0.22em] text-roseflare" onClick={() => handleDeleteConnection(connection.id)}>
                           Удалить
-                        </Button>
+                    </Button>
                         <Button variant="ghost" size="sm" className="border border-white/40 bg-white/60 text-xs uppercase tracking-[0.22em] text-ink" onClick={() => setExpandedBank(isExpanded ? null : connection.bank_provider)}>
                           {isExpanded ? 'Свернуть' : 'Показать счета'}
-                        </Button>
-                      </div>
-                    </div>
+                    </Button>
+                  </div>
+                </div>
 
-                    {isExpanded && (
+                {isExpanded && (
                       <div className="grid gap-4 md:grid-cols-2">
                         {bankAccounts.map((account) => (
                           <Card key={account.id} className="relative overflow-hidden bg-white/80 p-5">
@@ -423,7 +422,7 @@ const AccountsPage = () => {
                                 {account.account_number && (
                                   <p className="text-xs text-ink/50">{account.account_number}</p>
                                 )}
-                              </div>
+                      </div>
                               <div className="text-right">
                                 <p className="text-xs text-ink/45">Баланс</p>
                                 <p className="text-lg font-semibold text-ink">{formatCurrency(Number(account.balance))} ₽</p>
@@ -446,11 +445,11 @@ const AccountsPage = () => {
                       </div>
                     )}
                   </div>
-                </Card>
-              );
-            })}
-          </div>
-        )}
+              </Card>
+            );
+          })}
+        </div>
+      )}
       </section>
 
       <ConnectBankModal

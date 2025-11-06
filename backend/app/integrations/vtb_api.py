@@ -9,7 +9,7 @@ from app.config import settings
 class OpenBankingClient:
     """Client for OpenBanking Russia Sandbox API with GOST support."""
     
-    # Bank base URLs (standard)
+    # Bank base URLs (from https://vbank.open.bankingapi.ru/docs)
     BANK_URLS = {
         "vbank": "https://vbank.open.bankingapi.ru",
         "abank": "https://abank.open.bankingapi.ru",
@@ -21,10 +21,9 @@ class OpenBankingClient:
         
         Args:
             bank_code: Bank code (vbank, abank, sbank)
-            use_gost: Override GOST setting (if None, uses settings.USE_GOST)
+            use_gost: Override GOST setting
         """
         self.bank_code = bank_code
-        # ВАЖНО: use_gost должен быть False если не передан явно
         self.use_gost = use_gost if use_gost is not None else False
         
         # Choose base URL based on GOST setting
@@ -33,20 +32,20 @@ class OpenBankingClient:
             self.base_url = settings.GOST_API_BASE
             print(f"🔒 Using GOST Gateway: {self.base_url}")
         else:
-            # Standard connection - direct to bank
+            # Standard connection - direct to specific bank
+            # Each bank has its own URL: vbank.open.bankingapi.ru, abank.open.bankingapi.ru, etc.
             self.base_url = self.BANK_URLS.get(bank_code, self.BANK_URLS["vbank"])
-            print(f"🌐 Using standard connection: {self.base_url}")
+            print(f"🌐 Using {bank_code} API: {self.base_url}")
         
         self.team_id = settings.VTB_TEAM_ID
         
-        # Configure httpx client with GOST support if needed
+        # Configure httpx client
         client_kwargs = {"timeout": 30.0}
         
         if self.use_gost:
-            # For GOST, we need to disable SSL verification for now
-            # In production, would use proper GOST certificates
+            # For GOST, disable SSL verification (use proper certs in production)
             client_kwargs["verify"] = False
-            print("⚠️  GOST mode: SSL verification disabled (use proper certs in production)")
+            print("⚠️  GOST mode: SSL verification disabled")
         
         self.client = httpx.AsyncClient(**client_kwargs)
     
@@ -315,13 +314,13 @@ class OpenBankingClient:
     @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=2, max=10))
     async def get_products(
         self,
-        bank_token: str,
+        access_token: Optional[str] = None,
         product_type: Optional[str] = None
     ) -> List[Dict[str, Any]]:
-        """Get bank products catalog.
+        """Get bank products catalog (public endpoint, no auth required).
         
         Args:
-            bank_token: Bank token (не требует client_token)
+            access_token: Optional access token (not needed for public products)
             product_type: Filter by type (deposit, loan, credit_card, etc.)
         """
         url = f"{self.base_url}/products"
@@ -330,9 +329,9 @@ class OpenBankingClient:
         if product_type:
             params["product_type"] = product_type
         
+        # Products are public - no auth headers needed
         response = await self.client.get(
             url,
-            headers=self._get_headers(bank_token),
             params=params if params else None
         )
         response.raise_for_status()

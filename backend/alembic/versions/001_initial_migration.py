@@ -26,6 +26,7 @@ def upgrade() -> None:
         sa.Column('phone', sa.String(length=20), nullable=True),
         sa.Column('is_active', sa.Boolean(), nullable=True),
         sa.Column('is_superuser', sa.Boolean(), nullable=True),
+        sa.Column('use_gost_mode', sa.Boolean(), nullable=True, server_default='false'),
         sa.Column('created_at', sa.DateTime(), nullable=False),
         sa.Column('updated_at', sa.DateTime(), nullable=False),
         sa.PrimaryKeyConstraint('id')
@@ -93,6 +94,7 @@ def upgrade() -> None:
         sa.Column('category_id', sa.Integer(), nullable=True),
         sa.Column('external_transaction_id', sa.String(length=255), nullable=False),
         sa.Column('amount', sa.Numeric(precision=15, scale=2), nullable=False),
+        sa.Column('currency', sa.String(length=3), nullable=False, server_default='RUB'),
         sa.Column('transaction_type', sa.Enum('INCOME', 'EXPENSE', 'TRANSFER', name='transactiontype'), nullable=False),
         sa.Column('description', sa.Text(), nullable=True),
         sa.Column('merchant', sa.String(length=255), nullable=True),

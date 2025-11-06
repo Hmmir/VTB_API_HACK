@@ -9,7 +9,10 @@ import AnalyticsPage from './pages/AnalyticsPage';
 import BudgetsPage from './pages/BudgetsPage';
 import GoalsPage from './pages/GoalsPage';
 import ProductsPage from './pages/ProductsPage';
+import MyProductsPage from './pages/MyProductsPage';
 import RecommendationsPage from './pages/RecommendationsPage';
+import BankerConsolePage from './pages/BankerConsolePage';
+import AdminConsolePage from './pages/AdminConsolePage';
 import Layout from './components/common/Layout';
 
 // Protected route wrapper
@@ -56,8 +59,27 @@ function App() {
             <Route path="budgets" element={<BudgetsPage />} />
             <Route path="goals" element={<GoalsPage />} />
             <Route path="products" element={<ProductsPage />} />
+            <Route path="my-products" element={<MyProductsPage />} />
             <Route path="recommendations" element={<RecommendationsPage />} />
           </Route>
+
+          {/* Console routes */}
+          <Route
+            path="/banker"
+            element={
+              <ProtectedRoute>
+                <BankerConsolePage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin"
+            element={
+              <ProtectedRoute>
+                <AdminConsolePage />
+              </ProtectedRoute>
+            }
+          />
 
           {/* Fallback */}
           <Route path="*" element={<Navigate to="/" replace />} />

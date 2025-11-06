@@ -35,7 +35,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       console.error('Failed to load user:', error);
       localStorage.removeItem('access_token');
       localStorage.removeItem('refresh_token');
-      throw error;  // Re-throw so login knows it failed
+      // НЕ бросаем ошибку при mount, только очищаем токены
     } finally {
       setLoading(false);
     }

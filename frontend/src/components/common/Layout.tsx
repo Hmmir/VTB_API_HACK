@@ -71,7 +71,7 @@ const Layout = () => {
         <div className="absolute bottom-[-20%] left-[35%] h-80 w-[40rem] rounded-full bg-glow/25 blur-[160px]" />
       </div>
 
-      <div className="mx-auto max-w-7xl px-4 pb-16 pt-10 sm:px-6 lg:px-8">
+      <div className="mx-auto w-full px-4 pb-16 pt-10 sm:px-6 lg:px-8 xl:px-12 2xl:px-16">
         <header className="flex items-center justify-between gap-4 rounded-[1.75rem] border border-white/30 bg-white/70 px-6 py-4 shadow-[0_18px_45px_rgba(14,23,40,0.12)] backdrop-blur-xl">
           <div className="flex items-center gap-4">
             <span className="flex h-12 w-12 items-center justify-center rounded-[1.4rem_1.4rem_0.9rem_0.9rem] bg-primary-500 text-white shadow-[0_12px_30px_rgba(36,176,154,0.35)]">
@@ -84,6 +84,20 @@ const Layout = () => {
           </div>
 
           <div className="flex items-center gap-3">
+            <Link
+              to="/banker"
+              className="flex h-11 w-11 items-center justify-center rounded-[1.2rem] border border-white/30 bg-white/60 text-ink hover:bg-white/80 transition-all"
+              title="Banker Console"
+            >
+              👔
+            </Link>
+            <Link
+              to="/admin"
+              className="flex h-11 w-11 items-center justify-center rounded-[1.2rem] border border-white/30 bg-white/60 text-ink hover:bg-white/80 transition-all"
+              title="Admin Console"
+            >
+              ⚙️
+            </Link>
             <Button
               variant="ghost"
               size="sm"

@@ -25,7 +25,7 @@ class Budget(Base):
     
     name = Column(String(255), nullable=False)
     amount = Column(Numeric(precision=15, scale=2), nullable=False)
-    period = Column(SQLEnum(BudgetPeriod), nullable=False)
+    period = Column(SQLEnum(BudgetPeriod), nullable=True)  # Made optional
     
     # Date range
     start_date = Column(DateTime, nullable=False)
