@@ -79,6 +79,65 @@ def seed_demo_data(db: Session):
     # Users can connect banks via UI
     print("  ⏭️  Skipping bank connections (users will connect via UI)")
     
+    # 3a. Create Family Hub demo data
+    print("  👨‍👩‍👧 Creating family hub demo...")
+    family_group = FamilyGroup(
+        name="Семья Демидовых",
+        description="Демонстрационная семейная группа",
+        created_by_user_id=user1.id,
+        invite_code="DEMOTEAM",
+    )
+    db.add(family_group)
+    db.flush()
+
+    family_admin = FamilyMember(
+        family_id=family_group.id,
+        user_id=user1.id,
+        role=FamilyRole.ADMIN,
+        status=FamilyMemberStatus.ACTIVE,
+        joined_at=datetime.utcnow(),
+    )
+    family_member = FamilyMember(
+        family_id=family_group.id,
+        user_id=user2.id,
+        role=FamilyRole.MEMBER,
+        status=FamilyMemberStatus.ACTIVE,
+        joined_at=datetime.utcnow(),
+    )
+    db.add_all([family_admin, family_member])
+    db.flush()
+
+    admin_settings = FamilyMemberSettings(member_id=family_admin.id, show_accounts=True, default_visibility="family")
+    member_settings = FamilyMemberSettings(member_id=family_member.id, show_accounts=True, default_visibility="family")
+    db.add_all([admin_settings, member_settings])
+
+    demo_budget = FamilyBudget(
+        family_id=family_group.id,
+        name="Домашние расходы",
+        amount=Decimal("75000.00"),
+        period=FamilyBudgetPeriod.MONTHLY,
+        status=FamilyBudgetStatus.ACTIVE,
+        created_by_member_id=family_admin.id,
+    )
+    demo_limit = FamilyMemberLimit(
+        family_id=family_group.id,
+        member_id=family_member.id,
+        amount=Decimal("15000.00"),
+        period=FamilyMemberLimitPeriod.MONTHLY,
+        status=FamilyMemberLimitStatus.ACTIVE,
+        auto_unlock=False,
+    )
+    demo_goal = FamilyGoal(
+        family_id=family_group.id,
+        name="Поездка к морю",
+        description="Совместная цель для отпуска",
+        target_amount=Decimal("200000.00"),
+        current_amount=Decimal("45000.00"),
+        status=FamilyGoalStatus.ACTIVE,
+        created_by_member_id=family_admin.id,
+    )
+    db.add_all([demo_budget, demo_limit, demo_goal])
+
     # 6. Create bank products
     print("  📦 Creating bank products...")
     from app.models.bank_product import ProductType as BPProductType
