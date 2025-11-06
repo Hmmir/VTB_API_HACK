@@ -9,6 +9,7 @@ from app.services.gost_adapter import GOSTAdapter  # noqa: F401
 from app.services.openbanking_service import OpenBankingService  # noqa: F401
 from app.services.payment_service import PaymentService  # noqa: F401
 from app.services.product_agreement_service import ProductAgreementService  # noqa: F401
+from app.services.family_service import FamilyService  # noqa: F401
 
 __all__ = [
     "AuthService",
@@ -20,5 +21,6 @@ __all__ = [
     "OpenBankingService",
     "PaymentService",
     "ProductAgreementService",
+    "FamilyService",
 ]
 

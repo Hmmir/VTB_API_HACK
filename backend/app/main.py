@@ -47,7 +47,7 @@ async def health_check():
 
 
 # Import API routers
-from app.api import auth, banks, accounts, transactions, analytics, budgets, recommendations, goals, products, system, gost, well_known, consents, payments, product_agreements, notifications, multibank, key_rate, bank_capital, unified_banking, banker
+from app.api import auth, banks, accounts, transactions, analytics, budgets, recommendations, goals, products, system, gost, well_known, consents, payments, product_agreements, notifications, multibank, key_rate, bank_capital, unified_banking, banker, family
 from app.api import export as export_router
 
 # Register API routers
@@ -73,6 +73,7 @@ app.include_router(bank_capital.router, tags=["Bank Capital"])
 app.include_router(well_known.router, tags=["Well-Known"])
 app.include_router(unified_banking.router, prefix="/api/v1", tags=["Unified Banking"])
 app.include_router(banker.router, tags=["Banker"])
+app.include_router(family.router, prefix="/api/v1", tags=["Family Banking"])
 
 # TODO: Add more routers as they are implemented
 # from app.api import goals, products, recommendations

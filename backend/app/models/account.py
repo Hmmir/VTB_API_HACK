@@ -22,6 +22,13 @@ class Currency(str, Enum):
     EUR = "EUR"
 
 
+class AccountVisibilityScope(str, Enum):
+    """Visibility scope for accounts in family hub."""
+
+    FAMILY = "family"
+    PRIVATE = "private"
+
+
 class Account(Base):
     """Account model - bank accounts, cards, etc."""
     
@@ -44,6 +51,12 @@ class Account(Base):
     # Metadata
     is_active = Column(Integer, default=1)  # Using Integer as Boolean proxy
     last_synced_at = Column(DateTime, nullable=True)
+    primary_family_id = Column(Integer, ForeignKey("family_groups.id", ondelete="SET NULL"), nullable=True)
+    visibility_scope = Column(
+        SQLEnum(AccountVisibilityScope, values_callable=lambda x: [e.value for e in x]),
+        nullable=False,
+        default=AccountVisibilityScope.FAMILY,
+    )
     
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
@@ -51,6 +64,7 @@ class Account(Base):
     # Relationships
     bank_connection = relationship("BankConnection", back_populates="accounts")
     transactions = relationship("Transaction", back_populates="account", cascade="all, delete-orphan")
+    primary_family = relationship("FamilyGroup")
     
     def __repr__(self):
         return f"<Account(id={self.id}, name='{self.account_name}', type={self.account_type}, balance={self.balance})>"

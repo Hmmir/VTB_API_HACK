@@ -1,7 +1,7 @@
 """Database models."""
 from app.models.user import User
 from app.models.bank_connection import BankConnection
-from app.models.account import Account
+from app.models.account import Account, AccountVisibilityScope
 from app.models.transaction import Transaction
 from app.models.category import Category
 from app.models.budget import Budget
@@ -36,6 +36,29 @@ from app.models.notification import (
     NotificationType,
     NotificationPriority,
 )
+from app.models.family import (
+    FamilyGroup,
+    FamilyMember,
+    FamilyMemberSettings,
+    FamilyBudget,
+    FamilyMemberLimit,
+    FamilyGoal,
+    FamilyGoalContribution,
+    FamilyTransfer,
+    FamilyNotification,
+    FamilyActivityLog,
+    FamilyAccountVisibility,
+    FamilyRole,
+    FamilyMemberStatus,
+    FamilyBudgetPeriod,
+    FamilyBudgetStatus,
+    FamilyMemberLimitPeriod,
+    FamilyMemberLimitStatus,
+    FamilyGoalStatus,
+    FamilyTransferStatus,
+    FamilyNotificationType,
+    FamilyNotificationStatus,
+)
 from app.models.key_rate import KeyRateHistory
 from app.models.bank_capital import BankCapital
 
@@ -43,6 +66,7 @@ __all__ = [
     "User",
     "BankConnection",
     "Account",
+    "AccountVisibilityScope",
     "Transaction",
     "Category",
     "Budget",
@@ -71,5 +95,26 @@ __all__ = [
     "NotificationPriority",
     "KeyRateHistory",
     "BankCapital",
+    "FamilyGroup",
+    "FamilyMember",
+    "FamilyMemberSettings",
+    "FamilyBudget",
+    "FamilyMemberLimit",
+    "FamilyGoal",
+    "FamilyGoalContribution",
+    "FamilyTransfer",
+    "FamilyNotification",
+    "FamilyActivityLog",
+    "FamilyAccountVisibility",
+    "FamilyRole",
+    "FamilyMemberStatus",
+    "FamilyBudgetPeriod",
+    "FamilyBudgetStatus",
+    "FamilyMemberLimitPeriod",
+    "FamilyMemberLimitStatus",
+    "FamilyGoalStatus",
+    "FamilyTransferStatus",
+    "FamilyNotificationType",
+    "FamilyNotificationStatus",
 ]
 
