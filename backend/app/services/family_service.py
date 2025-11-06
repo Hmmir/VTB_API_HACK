@@ -3,9 +3,9 @@
 from __future__ import annotations
 
 import secrets
-from datetime import datetime
+from datetime import datetime, timedelta
 from decimal import Decimal
-from typing import List, Optional
+from typing import List, Optional, Tuple
 
 from fastapi import HTTPException, status
 from sqlalchemy import func
@@ -37,6 +37,11 @@ from app.models.family import (
 )
 from app.models.transaction import Transaction, TransactionType
 from app.models.category import Category
+from app.models.notification import (
+    Notification as GlobalNotification,
+    NotificationType as GlobalNotificationType,
+    NotificationPriority,
+)
 from app.schemas.family import (
     FamilyBudgetCreate,
     FamilyGoalContributionCreate,
@@ -111,9 +116,86 @@ class FamilyService:
         )
         db.add(notification)
 
+        recipients: List[int] = []
+        if member_id:
+            member = db.query(FamilyMember).filter(FamilyMember.id == member_id, FamilyMember.family_id == family_id).first()
+            if member:
+                recipients.append(member.user_id)
+        else:
+            admin_members = (
+                db.query(FamilyMember)
+                .filter(
+                    FamilyMember.family_id == family_id,
+                    FamilyMember.status == FamilyMemberStatus.ACTIVE,
+                    FamilyMember.role == FamilyRole.ADMIN,
+                )
+                .all()
+            )
+            recipients = [m.user_id for m in admin_members]
+
+        title, message, global_type, priority = FamilyService._build_global_notification_content(notification_type, payload)
+
+        for user_id in recipients:
+            global_notification = GlobalNotification(
+                user_id=user_id,
+                type=global_type,
+                priority=priority,
+                title=title,
+                message=message,
+                related_entity_type="family",
+                related_entity_id=str(notification.id),
+                notification_metadata=payload or {},
+            )
+            db.add(global_notification)
+
     # ------------------------------------------------------------------
     # Family management
     # ------------------------------------------------------------------
+    @staticmethod
+    def _build_global_notification_content(
+        notification_type: FamilyNotificationType,
+        payload: Optional[dict],
+    ) -> Tuple[str, str, GlobalNotificationType, NotificationPriority]:
+        payload = payload or {}
+
+        if notification_type == FamilyNotificationType.LIMIT_EXCEEDED:
+            title = "Превышен лимит расходов"
+            message = "Семейный лимит расходов достигнут. Проверьте траты и одобрите исключения."
+            return title, message, GlobalNotificationType.BUDGET_EXCEEDED, NotificationPriority.HIGH
+        if notification_type == FamilyNotificationType.LIMIT_APPROACH:
+            title = "Лимит расходов почти исчерпан"
+            message = "Участник приближается к установленному лимиту. Рекомендуем проверить траты."
+            return title, message, GlobalNotificationType.SYSTEM, NotificationPriority.MEDIUM
+        if notification_type == FamilyNotificationType.BUDGET_APPROACH:
+            title = "Семейный бюджет на исходе"
+            message = "Совместный бюджет близок к пределу. Пересмотрите расходы в этой категории."
+            return title, message, GlobalNotificationType.SYSTEM, NotificationPriority.MEDIUM
+        if notification_type == FamilyNotificationType.TRANSFER_REQUEST:
+            title = "Новый запрос на перевод"
+            message = "Один из участников запросил перевод. Подтвердите или отклоните запрос."
+            return title, message, GlobalNotificationType.SYSTEM, NotificationPriority.MEDIUM
+        if notification_type == FamilyNotificationType.TRANSFER_APPROVED:
+            status_value = payload.get("status") if isinstance(payload, dict) else None
+            if status_value == "rejected":
+                title = "Запрос на перевод отклонён"
+                message = "Запрошенный перевод был отклонён администратором семьи."
+                return title, message, GlobalNotificationType.TRANSFER_FAILED, NotificationPriority.MEDIUM
+            title = "Перевод выполнен"
+            message = "Запрошенный перевод был успешно одобрен и выполнен."
+            return title, message, GlobalNotificationType.TRANSFER_COMPLETED, NotificationPriority.MEDIUM
+        if notification_type == FamilyNotificationType.GOAL_COMPLETED:
+            title = "Семейная цель достигнута"
+            message = "Поздравляем! Общая цель достигнута. Планируйте новую цель и празднуйте результат."
+            return title, message, GlobalNotificationType.GOAL_ACHIEVED, NotificationPriority.MEDIUM
+        if notification_type == FamilyNotificationType.GOAL_PROGRESS:
+            title = "Прогресс по семейной цели"
+            message = "Цель пополнена. Продолжайте в том же духе, чтобы быстрее достичь результата."
+            return title, message, GlobalNotificationType.SYSTEM, NotificationPriority.LOW
+
+        title = "Обновление семейного хаба"
+        message = "Событие Family Banking Hub требует вашего внимания."
+        return title, message, GlobalNotificationType.SYSTEM, NotificationPriority.LOW
+
     @staticmethod
     def create_family(db: Session, *, user_id: int, name: str, description: Optional[str]) -> FamilyGroup:
         invite_code = FamilyService._generate_invite_code(db)
@@ -470,6 +552,19 @@ class FamilyService:
         if not to_member:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Recipient not found")
 
+        amount_decimal = Decimal(str(payload.amount))
+        exceeds = FamilyService._check_member_limits(
+            db,
+            family_id=family_id,
+            member=requester,
+            amount=amount_decimal,
+        )
+        if exceeds and requester.role != FamilyRole.ADMIN:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Перевод превышает установленный лимит",
+            )
+
         transfer = FamilyTransfer(
             family_id=family_id,
             from_member_id=requester.id,
@@ -477,7 +572,7 @@ class FamilyService:
             from_account_id=payload.from_account_id,
             to_account_id=payload.to_account_id,
             requested_by_member_id=requester.id,
-            amount=payload.amount,
+            amount=amount_decimal,
             currency=payload.currency,
             description=payload.description,
             status=FamilyTransferStatus.PENDING if requester.role != FamilyRole.ADMIN else FamilyTransferStatus.APPROVED,
@@ -564,6 +659,10 @@ class FamilyService:
             transfer.status = FamilyTransferStatus.EXECUTED
         else:
             transfer.status = FamilyTransferStatus.APPROVED
+
+        if transfer.from_member_id:
+            FamilyService._evaluate_member_limits(db, family_id=family_id, member_id=transfer.from_member_id)
+        FamilyService._evaluate_family_budgets(db, family_id=family_id)
 
         FamilyService._create_notification(
             db,
@@ -840,6 +939,209 @@ class FamilyService:
 
         db.add(debit_tx)
         db.add(credit_tx)
+
+    @staticmethod
+    def _get_period_start(period: FamilyMemberLimitPeriod | FamilyBudgetPeriod) -> datetime:
+        now = datetime.utcnow()
+        if period == FamilyMemberLimitPeriod.WEEKLY or period == FamilyBudgetPeriod.WEEKLY:
+            return now - timedelta(days=7)
+        return now - timedelta(days=30)
+
+    @staticmethod
+    def _calculate_member_spending(
+        db: Session,
+        *,
+        member: FamilyMember,
+        start: datetime,
+        category_id: Optional[int] = None,
+    ) -> Decimal:
+        query = (
+            db.query(func.coalesce(func.sum(Transaction.amount), 0))
+            .join(Transaction.account)
+            .join(Account.bank_connection)
+            .filter(
+                Account.bank_connection.has(user_id=member.user_id),
+                Transaction.transaction_date >= start,
+                Transaction.amount < 0,
+            )
+        )
+        if category_id:
+            query = query.filter(Transaction.category_id == category_id)
+
+        spent = query.scalar() or 0
+        return Decimal(str(abs(spent)))
+
+    @staticmethod
+    def _check_member_limits(
+        db: Session,
+        *,
+        family_id: int,
+        member: FamilyMember,
+        amount: Decimal,
+    ) -> bool:
+        limits = (
+            db.query(FamilyMemberLimit)
+            .filter(
+                FamilyMemberLimit.family_id == family_id,
+                FamilyMemberLimit.member_id == member.id,
+                FamilyMemberLimit.status == FamilyMemberLimitStatus.ACTIVE,
+            )
+            .all()
+        )
+        exceeded = False
+        for limit_obj in limits:
+            period_start = FamilyService._get_period_start(limit_obj.period)
+            spent = FamilyService._calculate_member_spending(
+                db,
+                member=member,
+                start=period_start,
+                category_id=limit_obj.category_id,
+            )
+            threshold = Decimal(str(limit_obj.amount))
+            projected = spent + amount
+
+            if projected >= threshold:
+                exceeded = True
+                FamilyService._create_notification(
+                    db,
+                    family_id=family_id,
+                    member_id=member.id,
+                    notification_type=FamilyNotificationType.LIMIT_EXCEEDED,
+                    payload={
+                        "member_id": member.id,
+                        "limit_id": limit_obj.id,
+                        "limit_amount": str(threshold),
+                        "period": limit_obj.period.value,
+                        "spent": str(projected),
+                    },
+                )
+            elif projected >= threshold * Decimal("0.8"):
+                FamilyService._create_notification(
+                    db,
+                    family_id=family_id,
+                    member_id=member.id,
+                    notification_type=FamilyNotificationType.LIMIT_APPROACH,
+                    payload={
+                        "member_id": member.id,
+                        "limit_id": limit_obj.id,
+                        "limit_amount": str(threshold),
+                        "period": limit_obj.period.value,
+                        "spent": str(projected),
+                    },
+                )
+        return exceeded
+
+    @staticmethod
+    def _evaluate_member_limits(db: Session, *, family_id: int, member_id: int) -> None:
+        member = db.query(FamilyMember).filter(FamilyMember.id == member_id, FamilyMember.family_id == family_id).first()
+        if not member:
+            return
+        limits = (
+            db.query(FamilyMemberLimit)
+            .filter(
+                FamilyMemberLimit.family_id == family_id,
+                FamilyMemberLimit.member_id == member_id,
+                FamilyMemberLimit.status == FamilyMemberLimitStatus.ACTIVE,
+            )
+            .all()
+        )
+        for limit_obj in limits:
+            period_start = FamilyService._get_period_start(limit_obj.period)
+            spent = FamilyService._calculate_member_spending(
+                db,
+                member=member,
+                start=period_start,
+                category_id=limit_obj.category_id,
+            )
+            threshold = Decimal(str(limit_obj.amount))
+            if spent >= threshold:
+                FamilyService._create_notification(
+                    db,
+                    family_id=family_id,
+                    member_id=member.id,
+                    notification_type=FamilyNotificationType.LIMIT_EXCEEDED,
+                    payload={
+                        "member_id": member.id,
+                        "limit_id": limit_obj.id,
+                        "limit_amount": str(threshold),
+                        "period": limit_obj.period.value,
+                        "spent": str(spent),
+                    },
+                )
+            elif spent >= threshold * Decimal("0.8"):
+                FamilyService._create_notification(
+                    db,
+                    family_id=family_id,
+                    member_id=member.id,
+                    notification_type=FamilyNotificationType.LIMIT_APPROACH,
+                    payload={
+                        "member_id": member.id,
+                        "limit_id": limit_obj.id,
+                        "limit_amount": str(threshold),
+                        "period": limit_obj.period.value,
+                        "spent": str(spent),
+                    },
+                )
+
+    @staticmethod
+    def _evaluate_family_budgets(db: Session, *, family_id: int) -> None:
+        budgets = (
+            db.query(FamilyBudget)
+            .filter(FamilyBudget.family_id == family_id, FamilyBudget.status == FamilyBudgetStatus.ACTIVE)
+            .all()
+        )
+        if not budgets:
+            return
+
+        accounts = db.query(Account).filter(Account.primary_family_id == family_id).all()
+        account_ids = [account.id for account in accounts]
+        if not account_ids:
+            return
+
+        for budget in budgets:
+            period_start = FamilyService._get_period_start(budget.period)
+            query = (
+                db.query(func.coalesce(func.sum(Transaction.amount), 0))
+                .filter(
+                    Transaction.account_id.in_(account_ids),
+                    Transaction.transaction_date >= period_start,
+                    Transaction.amount < 0,
+                )
+            )
+            if budget.category_id:
+                query = query.filter(Transaction.category_id == budget.category_id)
+
+            spent_value = query.scalar() or 0
+            spent = Decimal(str(abs(spent_value)))
+            threshold = Decimal(str(budget.amount))
+
+            if spent >= threshold:
+                FamilyService._create_notification(
+                    db,
+                    family_id=family_id,
+                    member_id=None,
+                    notification_type=FamilyNotificationType.LIMIT_EXCEEDED,
+                    payload={
+                        "budget_id": budget.id,
+                        "budget_name": budget.name,
+                        "amount": str(threshold),
+                        "spent": str(spent),
+                        "type": "budget",
+                    },
+                )
+            elif spent >= threshold * Decimal("0.8"):
+                FamilyService._create_notification(
+                    db,
+                    family_id=family_id,
+                    member_id=None,
+                    notification_type=FamilyNotificationType.BUDGET_APPROACH,
+                    payload={
+                        "budget_id": budget.id,
+                        "budget_name": budget.name,
+                        "amount": str(threshold),
+                        "spent": str(spent),
+                    },
+                )
 
 
 __all__ = ["FamilyService"]

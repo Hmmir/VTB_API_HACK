@@ -1,9 +1,13 @@
 """FastAPI application entry point."""
+import asyncio
+from contextlib import suppress
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from app.config import settings
 from app.utils.error_handlers import setup_error_handlers
+from app.tasks.family_tasks import family_monitor_loop
 
 # Create FastAPI app
 app = FastAPI(
@@ -74,6 +78,20 @@ app.include_router(well_known.router, tags=["Well-Known"])
 app.include_router(unified_banking.router, prefix="/api/v1", tags=["Unified Banking"])
 app.include_router(banker.router, tags=["Banker"])
 app.include_router(family.router, prefix="/api/v1", tags=["Family Banking"])
+
+
+@app.on_event("startup")
+async def start_background_tasks() -> None:
+    app.state.family_monitor_task = asyncio.create_task(family_monitor_loop())
+
+
+@app.on_event("shutdown")
+async def stop_background_tasks() -> None:
+    monitor_task = getattr(app.state, "family_monitor_task", None)
+    if monitor_task:
+        monitor_task.cancel()
+        with suppress(asyncio.CancelledError):
+            await monitor_task
 
 # TODO: Add more routers as they are implemented
 # from app.api import goals, products, recommendations
