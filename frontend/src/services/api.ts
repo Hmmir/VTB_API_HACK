@@ -11,7 +11,17 @@ import type {
   Category,
   Budget,
   Goal,
-  Recommendation
+  Recommendation,
+  Family,
+  FamilyDetail,
+  FamilyBudget,
+  FamilyMemberLimit,
+  FamilyGoal,
+  FamilyGoalContribution,
+  FamilyTransfer,
+  FamilyNotification,
+  FamilyAnalyticsSummary,
+  FamilyMember,
 } from '../types';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1';
@@ -340,6 +350,131 @@ class APIService {
       handleAPIError(error, 'Не удалось загрузить историю ключевой ставки');
       return [];
     }
+  }
+
+  // Family hub endpoints
+  async createFamily(data: { name: string; description?: string }): Promise<Family> {
+    const response = await this.client.post('/family/groups', data);
+    return response.data;
+  }
+
+  async listFamilies(): Promise<Family[]> {
+    const response = await this.client.get('/family/groups');
+    return response.data;
+  }
+
+  async getFamily(familyId: number): Promise<FamilyDetail> {
+    const response = await this.client.get(`/family/groups/${familyId}`);
+    return response.data;
+  }
+
+  async rotateFamilyInvite(familyId: number): Promise<{ family_id: number; invite_code: string }> {
+    const response = await this.client.post(`/family/groups/${familyId}/invite`);
+    return response.data;
+  }
+
+  async joinFamily(inviteCode: string): Promise<Family> {
+    const response = await this.client.post('/family/groups/join', { invite_code: inviteCode });
+    return response.data;
+  }
+
+  async updateFamilyMember(
+    familyId: number,
+    memberId: number,
+    payload: { role?: string; status?: string }
+  ): Promise<FamilyMember> {
+    const response = await this.client.patch(`/family/groups/${familyId}/members/${memberId}`, payload);
+    return response.data;
+  }
+
+  async removeFamilyMember(familyId: number, memberId: number): Promise<void> {
+    await this.client.delete(`/family/groups/${familyId}/members/${memberId}`);
+  }
+
+  async createFamilyBudget(familyId: number, payload: { name: string; amount: number; period: string; category_id?: number; start_date?: string; end_date?: string }): Promise<FamilyBudget> {
+    const response = await this.client.post(`/family/groups/${familyId}/budgets`, payload);
+    return response.data;
+  }
+
+  async listFamilyBudgets(familyId: number): Promise<FamilyBudget[]> {
+    const response = await this.client.get(`/family/groups/${familyId}/budgets`);
+    return response.data;
+  }
+
+  async createFamilyMemberLimit(
+    familyId: number,
+    payload: { member_id: number; amount: number; period: string; category_id?: number; auto_unlock?: boolean }
+  ): Promise<FamilyMemberLimit> {
+    const response = await this.client.post(`/family/groups/${familyId}/limits`, payload);
+    return response.data;
+  }
+
+  async listFamilyMemberLimits(familyId: number): Promise<FamilyMemberLimit[]> {
+    const response = await this.client.get(`/family/groups/${familyId}/limits`);
+    return response.data;
+  }
+
+  async createFamilyGoal(
+    familyId: number,
+    payload: { name: string; description?: string; target_amount: number; deadline?: string }
+  ): Promise<FamilyGoal> {
+    const response = await this.client.post(`/family/groups/${familyId}/goals`, payload);
+    return response.data;
+  }
+
+  async listFamilyGoals(familyId: number): Promise<FamilyGoal[]> {
+    const response = await this.client.get(`/family/groups/${familyId}/goals`);
+    return response.data;
+  }
+
+  async contributeFamilyGoal(
+    familyId: number,
+    goalId: number,
+    payload: { amount: number; source_account_id?: number; scheduled?: boolean; schedule_rule?: Record<string, unknown> }
+  ): Promise<FamilyGoalContribution> {
+    const response = await this.client.post(`/family/groups/${familyId}/goals/${goalId}/contributions`, payload);
+    return response.data;
+  }
+
+  async createFamilyTransfer(
+    familyId: number,
+    payload: { to_member_id: number; to_account_id?: number; from_account_id?: number; amount: number; currency?: string; description?: string }
+  ): Promise<FamilyTransfer> {
+    const response = await this.client.post(`/family/groups/${familyId}/transfers`, payload);
+    return response.data;
+  }
+
+  async decideFamilyTransfer(
+    familyId: number,
+    transferId: number,
+    payload: { approve: boolean; reason?: string }
+  ): Promise<FamilyTransfer> {
+    const response = await this.client.post(`/family/groups/${familyId}/transfers/${transferId}/decision`, payload);
+    return response.data;
+  }
+
+  async listFamilyTransfers(familyId: number): Promise<FamilyTransfer[]> {
+    const response = await this.client.get(`/family/groups/${familyId}/transfers`);
+    return response.data;
+  }
+
+  async listFamilyNotifications(familyId: number): Promise<FamilyNotification[]> {
+    const response = await this.client.get(`/family/groups/${familyId}/notifications`);
+    return response.data;
+  }
+
+  async getFamilyAnalytics(familyId: number): Promise<FamilyAnalyticsSummary> {
+    const response = await this.client.get(`/family/groups/${familyId}/analytics/summary`);
+    return response.data;
+  }
+
+  async updateFamilyAccountVisibility(
+    familyId: number,
+    accountId: number,
+    payload: { visibility_scope: string }
+  ): Promise<{ visibility_scope: string }> {
+    const response = await this.client.patch(`/family/groups/${familyId}/accounts/${accountId}/visibility`, payload);
+    return response.data;
   }
 }
 

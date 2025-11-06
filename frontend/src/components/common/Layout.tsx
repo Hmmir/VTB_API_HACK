@@ -24,6 +24,7 @@ const Layout = () => {
     { path: '/analytics', label: 'Аналитика', icon: '📊', tagline: 'Спектр метрик' },
     { path: '/budgets', label: 'Бюджеты', icon: '💰', tagline: 'Контуры планирования' },
     { path: '/goals', label: 'Цели', icon: '🎯', tagline: 'Финансовые векторы' },
+    { path: '/family', label: 'Семья', icon: '👨‍👩‍👧', tagline: 'Family Banking Hub' },
     { path: '/products', label: 'Продукты', icon: '🏦', tagline: 'Витрина сервисов' },
     { path: '/recommendations', label: 'Советы', icon: '💡', tagline: 'Персональные инсайты' },
   ];
