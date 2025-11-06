@@ -95,9 +95,10 @@ spec-kit/
 # specs/
 # memory/
 
-# Exclude all markdown files in root except README.md
+# Exclude all markdown files in root except README.md and QUICK_START.md
 /*.md
 !README.md
+!QUICK_START.md
 
 # Exclude temporary files and packages
 *.zip
