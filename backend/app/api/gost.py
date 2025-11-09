@@ -108,7 +108,7 @@ async def test_gost_connection(
                 result = response.json()
                 logger.info(f"✅ GOST test через Windows service: success={result.get('success')}")
                 return result
-            else:
+    else:
                 logger.warning(f"Windows service вернул {response.status_code}")
         except requests.exceptions.ConnectionError:
             logger.warning("Windows service недоступен, пробуем через Docker контейнер...")
@@ -124,7 +124,7 @@ async def test_gost_connection(
         else:
             message = f"❌ GOST TLS не работает: {result.get('error', 'Unknown error')}"
         
-        return {
+    return {
             **result,
             "message": message
         }
@@ -177,7 +177,7 @@ async def gost_health_check(
         raise
     except Exception as e:
         logger.error(f"Health check failed: {e}")
-        return {
+                return {
             "auth": False,
             "standard_api": False,
             "gost_tls": False,

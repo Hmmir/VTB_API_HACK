@@ -123,7 +123,7 @@ const TransactionsPage = () => {
     return <div className="h-28 bg-gray-200 animate-pulse rounded-xl" />;
   }
 
-  const handleExport = async (format: 'csv' | 'pdf' | 'excel') => {
+  const handleExport = async (format: 'csv' | 'pdf' | 'excel' | 'ods') => {
     try {
       const token = localStorage.getItem('access_token');
       const url = `http://localhost:8000/api/v1/export/transactions/${format}?from_date=&to_date=`;
@@ -142,7 +142,14 @@ const TransactionsPage = () => {
       const downloadUrl = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = downloadUrl;
-      a.download = `transactions_${Date.now()}.${format === 'excel' ? 'xlsx' : format}`;
+      
+      // Определяем расширение файла
+      let extension = format;
+      if (format === 'excel') extension = 'xlsx';
+      else if (format === 'ods') extension = 'ods';
+      else if (format === 'pdf') extension = 'pdf';
+      
+      a.download = `transactions_${Date.now()}.${extension}`;
       document.body.appendChild(a);
       a.click();
       a.remove();
@@ -160,6 +167,12 @@ const TransactionsPage = () => {
         <div className="flex items-center gap-2">
           <Button variant="secondary" size="sm" onClick={() => handleExport('pdf')} title="Экспорт в PDF">
             📑 PDF
+          </Button>
+          <Button variant="secondary" size="sm" onClick={() => handleExport('excel')} title="Экспорт в Excel">
+            📊 Excel
+          </Button>
+          <Button variant="secondary" size="sm" onClick={() => handleExport('ods')} title="Экспорт в Мой Офис">
+            📄 Мой Офис
           </Button>
         </div>
       </div>

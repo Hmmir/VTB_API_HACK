@@ -50,8 +50,9 @@ mypy==1.7.1
 # Environment Variables
 python-dotenv==1.0.0
 
-# Export to PDF/Excel
+# Export to PDF/Excel/ODS
 reportlab==4.0.7
 openpyxl==3.1.2
 Pillow==10.1.0
+odfpy==1.4.1  # For Мой Офис ODS export
 

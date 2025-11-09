@@ -1,0 +1,102 @@
+================================================================================
+ПОЛНЫЙ ВЫВОД ТЕСТА GOST API
+================================================================================
+
+Время: 2025-11-02 12:02:42
+
+ВЫВОД csptest:
+--------------------------------------------------------------------------------
+#0: 
+Subject: CN=VTB Test User
+Valid  : 02.11.2025 01:19:44 - 02.11.2026 01:39:44 (UTC)
+Issuer : CN=VTB Test User
+
+
+Client certificate:
+Subject: CN=VTB Test User
+Valid  : 02.11.2025 01:19:44 - 02.11.2026 01:39:44 (UTC)
+Issuer : CN=VTB Test User
+
+20 algorithms supported:
+     Algid  Class  OID
+[00] 0x661e 0x6000 1.2.643.2.2.21 (ГОСТ 28147-89)
+[01] 0x6631 0x6000 1.2.643.7.1.1.5.2.1 (ГОСТ Р 34.12-2015 Кузнечик CTR-ACPKM)
+[02] 0x6630 0x6000 1.2.643.7.1.1.5.1.1 (ГОСТ Р 34.12-2015 Магма CTR-ACPKM)
+[03] 0x801e 0x8000 1.2.643.2.2.9 (ГОСТ Р 34.11-94)
+[04] 0x8021 0x8000 1.2.643.7.1.1.2.2 (ГОСТ Р 34.11-2012 256 бит)
+[05] 0x801f 0x8000
+[06] 0x803d 0x8000
+[07] 0x803c 0x8000
+[08] 0x2e23 0x2000 1.2.643.2.2.19 (ГОСТ Р 34.10-2001)
+[09] 0x2e49 0x2000 1.2.643.7.1.1.1.1 (ГОСТ Р 34.10-2012 256 бит)
+[10] 0x2e3d 0x2000 1.2.643.7.1.1.1.2 (ГОСТ Р 34.10-2012 512 бит)
+[11] 0x660e 0x6000
+[12] 0x6610 0x6000
+[13] 0x6603 0x6000 1.2.840.113549.3.7 (3des)
+[14] 0x8004 0x8000 1.3.14.3.2.26 (sha1)
+[15] 0x800c 0x8000
+[16] 0x800d 0x8000
+[17] 0x800e 0x8000
+[18] 0x2400 0x2000 1.2.840.113549.1.1.1 (RSA)
+[19] 0xae06 0xa000
+Cipher strengths: 128..256
+Supported protocols: 0x800:
+    Transport Layer Security 1.2 client side
+dwProtocolMask: 0x800e2aaa
+Protocol version: 3.3
+ClientHello: RecordLayer: TLS, Len: 115
+SessionId: (empty)
+Cipher Suites: (c1 00) (c1 01) (c1 02) (ff 85) (00 81) 
+120 bytes of handshake data sent
+3101 bytes of handshake data received
+229 bytes of handshake data sent
+63 bytes of handshake data received
+Handshake was successful
+SECPKG_ATTR_SESSION_INFO: Reuse: 0, SessionId: e152967575306e5ab7ecfc2ac5cbcaa9fdbfee6df0b47f75612631b96bd42836
+
+SECPKG_ATTR_CIPHER_INFO: Version: 1
+SECPKG_ATTR_CIPHER_INFO: Protocol: 303
+SECPKG_ATTR_CIPHER_INFO: CipherSuite: c100, TLS_GOSTR341112_256_WITH_KUZNYECHIK_CTR_OMAC
+SECPKG_ATTR_CIPHER_INFO: BaseCipherSuite: c100
+SECPKG_ATTR_CIPHER_INFO: Cipher: GR 34.12-15 K, Len: 256, BlockLen: 1
+SECPKG_ATTR_CIPHER_INFO: Hash: GR 34.11-2012 256, Len: 256
+SECPKG_ATTR_CIPHER_INFO: Exchange: GOST DH 34.10-2012 256, MinLen: 512, MaxLen: 512
+SECPKG_ATTR_CIPHER_INFO: Certificate: GR 34.10-2012 256, KeyType: 23
+
+SECPKG_ATTR_CONNECTION_INFO: Protocol: 0x800 (TLS 1.2)
+SECPKG_ATTR_CONNECTION_INFO: Cipher: 0x6631 (GOST R 34.12-2015 Kuznyechik)
+SECPKG_ATTR_CONNECTION_INFO: Cipher strength: 256
+SECPKG_ATTR_CONNECTION_INFO: Hash: 0x8021 (GOST R 34.11-2012 (256))
+SECPKG_ATTR_CONNECTION_INFO: Hash strength: 256
+SECPKG_ATTR_CONNECTION_INFO: Exch: 0xaa47 (GOST R 34.10-2012 (256) Ephemeral)
+SECPKG_ATTR_CONNECTION_INFO: Key exchange strength: 512
+
+SECPKG_ATTR_KEY_INFO: KeySize: 256
+SECPKG_ATTR_KEY_INFO: SignatureAlgorithm: 0x2e49, Name: GOST R 34.11 2012 256
+SECPKG_ATTR_KEY_INFO: EncryptAlgorithm: 0x6631, Name: GR 34.12-2015 Kuznyechik
+
+SECPKG_ATTR_SUPPORTED_SIGNATURES: Supported signatures: (ee ee) (08 40) (ef ef) (08 41) (ed ed)
+
+SECPKG_ATTR_NAMES: STREET="Переулок Дегтярный, дом 11, литер А", C=RU, S=78 г. Санкт-Петербург, L=Санкт-Петербург, O=Банк ВТБ (ПАО), ОГРН=1027739609391, ИНН ЮЛ=7702070139, CN=Банк ВТБ (ПАО)
+
+SECPKG_ATTR_PACKAGE_INFO: fCapabilities: 0x4107B3
+SECPKG_ATTR_PACKAGE_INFO: wVersion: 1
+SECPKG_ATTR_PACKAGE_INFO: wRPCID: 65535
+SECPKG_ATTR_PACKAGE_INFO: cbMaxToken: 16379
+SECPKG_ATTR_PACKAGE_INFO: Name: CryptoPro SSP
+SECPKG_ATTR_PACKAGE_INFO: Comment: CryptoPro Security Package
+
+Server certificate:
+Subject: STREET="Переулок Дегтярный, дом 11, литер А", C=RU, S=78 г. Санкт-Петербург, L=Санкт-Петербург, O=Банк ВТБ (ПАО), ОГРН=1027739609391, ИНН ЮЛ=7702070139, CN=Банк ВТБ (ПАО)
+Valid  : 26.10.2025 10:11:00 - 09.12.2025 20:59:59 (UTC)
+Issuer : STREET="ул.Отрадная, 2Б стр.1", C=RU, L=г. Москва, OU=Удостоверяющий центр, O=Тестовый УЦ ИнфоТеКС, CN=Тестовый УЦ ИнфоТеКС
+CA subject: STREET="ул.Отрадная, 2Б стр.1", C=RU, L=г. Москва, OU=Удостоверяющий центр, O=Тестовый УЦ ИнфоТеКС, CN=Тестовый УЦ ИнфоТеКС
+CA issuer : STREET="ул.Отрадная, 2Б стр.1", C=RU, L=г. Москва, OU=Удостоверяющий центр, O=Тестовый УЦ ИнфоТеКС, CN=Тестовый УЦ ИнфоТеКС
+
+Error 0x800b0109 (CERT_E_UNTRUSTEDROOT) returned by CertVerifyCertificateChainPolicy!
+Total: SYS: 0,188 sec USR: 0,078 sec UTC: 0,344 sec
+[ErrorCode: 0x800b0109]
+E:\branches\CSP_5_0r4w\branches\CSP_5_0r4w_0\CSP\samples\csptest\WebClient.c:1217:Error authenticating server credentials!
+Error 0x800b0109: Цепочка сертификатов обработана, но обработка прервана на корневом сертификате, у которого отсутствует отношение доверия с поставщиком доверия. 
+
+================================================================================

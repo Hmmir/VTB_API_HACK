@@ -27,6 +27,16 @@ from openpyxl import Workbook
 from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
 from openpyxl.utils import get_column_letter
 
+# ODS Generation (for Мой Офис)
+try:
+    from odf.opendocument import OpenDocumentSpreadsheet
+    from odf.style import Style, TextProperties, ParagraphProperties, TableColumnProperties
+    from odf.text import P
+    from odf.table import Table as ODSTable, TableColumn, TableRow, TableCell
+    ODS_AVAILABLE = True
+except ImportError:
+    ODS_AVAILABLE = False
+
 router = APIRouter()
 
 
@@ -505,6 +515,161 @@ def export_transactions_excel(
     return StreamingResponse(
         excel_data,
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={
+            "Content-Disposition": f"attachment; filename={filename}"
+        }
+    )
+
+
+def generate_transactions_ods(
+    user: User,
+    db: Session,
+    from_date: Optional[datetime] = None,
+    to_date: Optional[datetime] = None
+) -> BytesIO:
+    """Generate ODS report of transactions (for Мой Офис)."""
+    
+    if not ODS_AVAILABLE:
+        raise ImportError("odfpy library is not installed. Install with: pip install odfpy")
+    
+    # Get user's accounts
+    account_ids = [acc.id for acc in db.query(Account).join(Account.bank_connection).filter(
+        Account.bank_connection.has(user_id=user.id)
+    ).all()]
+    
+    # Build query
+    query = db.query(Transaction).filter(Transaction.account_id.in_(account_ids))
+    
+    if from_date:
+        query = query.filter(Transaction.transaction_date >= from_date)
+    if to_date:
+        query = query.filter(Transaction.transaction_date <= to_date)
+    
+    transactions = query.order_by(Transaction.transaction_date.desc()).all()
+    
+    # Create ODS document
+    doc = OpenDocumentSpreadsheet()
+    
+    # Create table
+    table = ODSTable(name="Транзакции")
+    
+    # Add header row
+    headers = ['Дата', 'Время', 'Описание', 'Категория', 'Тип', 'Сумма (₽)', 'Валюта', 'Счет', 'Банк']
+    header_row = TableRow()
+    for header in headers:
+        cell = TableCell()
+        cell.addElement(P(text=header))
+        header_row.addElement(cell)
+    table.addElement(header_row)
+    
+    # Add data rows
+    for tx in transactions:
+        account = db.query(Account).filter(Account.id == tx.account_id).first()
+        bank = account.bank_connection.bank_provider.value if account and account.bank_connection else "Unknown"
+        
+        row = TableRow()
+        
+        # Date
+        cell = TableCell()
+        cell.addElement(P(text=tx.transaction_date.strftime('%d.%m.%Y')))
+        row.addElement(cell)
+        
+        # Time
+        cell = TableCell()
+        cell.addElement(P(text=tx.transaction_date.strftime('%H:%M:%S')))
+        row.addElement(cell)
+        
+        # Description
+        cell = TableCell()
+        cell.addElement(P(text=tx.description))
+        row.addElement(cell)
+        
+        # Category
+        cell = TableCell()
+        cell.addElement(P(text=tx.category.name if tx.category else 'Без категории'))
+        row.addElement(cell)
+        
+        # Type
+        cell = TableCell()
+        cell.addElement(P(text='Доход' if tx.transaction_type == TransactionType.INCOME else 'Расход'))
+        row.addElement(cell)
+        
+        # Amount
+        cell = TableCell()
+        cell.addElement(P(text=str(float(tx.amount))))
+        row.addElement(cell)
+        
+        # Currency
+        cell = TableCell()
+        cell.addElement(P(text=tx.currency))
+        row.addElement(cell)
+        
+        # Account
+        cell = TableCell()
+        cell.addElement(P(text=account.account_name if account else 'Unknown'))
+        row.addElement(cell)
+        
+        # Bank
+        cell = TableCell()
+        cell.addElement(P(text=bank))
+        row.addElement(cell)
+        
+        table.addElement(row)
+    
+    doc.spreadsheet.addElement(table)
+    
+    # Save to buffer
+    buffer = BytesIO()
+    doc.save(buffer)
+    buffer.seek(0)
+    return buffer
+
+
+@router.get("/transactions/ods")
+def export_transactions_ods(
+    from_date: Optional[str] = Query(None),
+    to_date: Optional[str] = Query(None),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Export transactions to ODS format (for Мой Офис)."""
+    
+    if not ODS_AVAILABLE:
+        from fastapi import HTTPException
+        raise HTTPException(
+            status_code=501,
+            detail="ODS export is not available. Install odfpy library."
+        )
+    
+    # Parse dates
+    from_dt = None
+    to_dt = None
+    
+    if from_date:
+        try:
+            from_dt = datetime.fromisoformat(from_date)
+        except:
+            pass
+    
+    if to_date:
+        try:
+            to_dt = datetime.fromisoformat(to_date)
+        except:
+            pass
+    
+    # Default to last 30 days if no dates provided
+    if not from_dt:
+        from_dt = datetime.utcnow() - timedelta(days=30)
+    if not to_dt:
+        to_dt = datetime.utcnow()
+    
+    ods_data = generate_transactions_ods(current_user, db, from_dt, to_dt)
+    
+    filename = f"transactions_{from_dt.strftime('%Y%m%d')}_{to_dt.strftime('%Y%m%d')}.ods"
+    
+    return StreamingResponse(
+        ods_data,
+        media_type="application/vnd.oasis.opendocument.spreadsheet",
         headers={
             "Content-Disposition": f"attachment; filename={filename}"
         }
