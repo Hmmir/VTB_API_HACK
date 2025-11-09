@@ -1,13 +1,9 @@
 """FastAPI application entry point."""
-import asyncio
-from contextlib import suppress
-
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from app.config import settings
 from app.utils.error_handlers import setup_error_handlers
-from app.tasks.family_tasks import family_monitor_loop
 
 # Create FastAPI app
 app = FastAPI(
@@ -51,12 +47,14 @@ async def health_check():
 
 
 # Import API routers
-from app.api import auth, banks, accounts, transactions, analytics, budgets, recommendations, goals, products, system, gost, well_known, consents, payments, product_agreements, notifications, multibank, key_rate, bank_capital, unified_banking, banker, family
+from app.api import auth, banks, accounts, transactions, analytics, budgets, recommendations, goals, products, system, gost, well_known, consents, payments, product_agreements, notifications, multibank, key_rate, bank_capital, unified_banking, banker, family, family_account, mybank, family_wallet
+from app.api import family_accounts_real
 from app.api import export as export_router
 
 # Register API routers
 app.include_router(auth.router, prefix="/api/v1/auth", tags=["Authentication"])
 app.include_router(banks.router, prefix="/api/v1/banks", tags=["Banks"])
+app.include_router(mybank.router, prefix="/api/v1/mybank", tags=["MyBank"])
 app.include_router(accounts.router, prefix="/api/v1/accounts", tags=["Accounts"])
 app.include_router(transactions.router, prefix="/api/v1/transactions", tags=["Transactions"])
 app.include_router(analytics.router, prefix="/api/v1/analytics", tags=["Analytics"])
@@ -77,21 +75,10 @@ app.include_router(bank_capital.router, tags=["Bank Capital"])
 app.include_router(well_known.router, tags=["Well-Known"])
 app.include_router(unified_banking.router, prefix="/api/v1", tags=["Unified Banking"])
 app.include_router(banker.router, tags=["Banker"])
-app.include_router(family.router, prefix="/api/v1", tags=["Family Banking"])
-
-
-@app.on_event("startup")
-async def start_background_tasks() -> None:
-    app.state.family_monitor_task = asyncio.create_task(family_monitor_loop())
-
-
-@app.on_event("shutdown")
-async def stop_background_tasks() -> None:
-    monitor_task = getattr(app.state, "family_monitor_task", None)
-    if monitor_task:
-        monitor_task.cancel()
-        with suppress(asyncio.CancelledError):
-            await monitor_task
+app.include_router(family.router, prefix="/api/v1", tags=["Family Banking Hub"])
+app.include_router(family_account.router, prefix="/api/v1", tags=["Family Shared Accounts"])
+app.include_router(family_accounts_real.router, prefix="/api/v1/family", tags=["Family Real Money"])
+app.include_router(family_wallet.router, prefix="/api/v1/family", tags=["Family Wallet"])
 
 # TODO: Add more routers as they are implemented
 # from app.api import goals, products, recommendations

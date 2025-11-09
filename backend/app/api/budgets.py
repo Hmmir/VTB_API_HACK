@@ -30,7 +30,7 @@ def create_budget(
     
     budget = Budget(
         user_id=current_user.id,
-        **budget_data.dict()
+        **budget_data.model_dump()
     )
     
     db.add(budget)
@@ -99,7 +99,7 @@ def update_budget(
             detail="Budget not found"
         )
     
-    for key, value in budget_data.dict(exclude_unset=True).items():
+    for key, value in budget_data.model_dump(exclude_unset=True).items():
         setattr(budget, key, value)
     
     db.commit()

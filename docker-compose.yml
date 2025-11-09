@@ -72,8 +72,42 @@ services:
       - financehub-network
     restart: unless-stopped
 
+  mybank-db:
+    image: postgres:15-alpine
+    container_name: mybank-db
+    environment:
+      POSTGRES_DB: mybank
+      POSTGRES_USER: mybank_user
+      POSTGRES_PASSWORD: mybank_password
+    ports:
+      - "5433:5432"
+    volumes:
+      - mybank_data:/var/lib/postgresql/data
+    networks:
+      - financehub-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U mybank_user -d mybank"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  mybank:
+    build:
+      context: ./mybank
+      dockerfile: Dockerfile
+    container_name: mybank-api
+    ports:
+      - "8001:8001"
+    depends_on:
+      mybank-db:
+        condition: service_healthy
+    networks:
+      - financehub-network
+    restart: unless-stopped
+
 volumes:
   postgres_data:
+  mybank_data:
 
 networks:
   financehub-network:

@@ -234,51 +234,59 @@ export default function BankerConsolePage() {
         )}
 
         {/* Statistics Tab */}
-        {activeTab === 'stats' && !loading && stats && (
+        {activeTab === 'stats' && !loading && (
           <div className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {!stats ? (
               <Card>
-                <div className="p-6">
-                  <div className="text-sm text-text-secondary mb-2">Всего клиентов</div>
-                  <div className="text-3xl font-bold text-ink">{stats.total_clients}</div>
+                <div className="p-12 text-center text-text-secondary">
+                  Нет данных для отображения
                 </div>
               </Card>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <Card>
+                  <div className="p-6">
+                    <div className="text-sm text-text-secondary mb-2">Всего клиентов</div>
+                    <div className="text-3xl font-bold text-ink">{stats.total_clients || 0}</div>
+                  </div>
+                </Card>
 
-              <Card>
-                <div className="p-6">
-                  <div className="text-sm text-text-secondary mb-2">Счетов открыто</div>
-                  <div className="text-3xl font-bold text-ink">{stats.total_accounts}</div>
-                </div>
-              </Card>
+                <Card>
+                  <div className="p-6">
+                    <div className="text-sm text-text-secondary mb-2">Счетов открыто</div>
+                    <div className="text-3xl font-bold text-ink">{stats.total_accounts || 0}</div>
+                  </div>
+                </Card>
 
-              <Card>
-                <div className="p-6">
-                  <div className="text-sm text-text-secondary mb-2">Общий баланс</div>
-                  <div className="text-3xl font-bold text-ink">{formatCurrency(stats.total_balance)}</div>
-                </div>
-              </Card>
+                <Card>
+                  <div className="p-6">
+                    <div className="text-sm text-text-secondary mb-2">Общий баланс</div>
+                    <div className="text-3xl font-bold text-ink">{formatCurrency(stats.total_balance || 0)}</div>
+                  </div>
+                </Card>
 
-              <Card>
-                <div className="p-6">
-                  <div className="text-sm text-text-secondary mb-2">Транзакций</div>
-                  <div className="text-3xl font-bold text-ink">{stats.total_transactions}</div>
-                </div>
-              </Card>
+                <Card>
+                  <div className="p-6">
+                    <div className="text-sm text-text-secondary mb-2">Транзакций</div>
+                    <div className="text-3xl font-bold text-ink">{stats.total_transactions || 0}</div>
+                  </div>
+                </Card>
 
-              <Card>
-                <div className="p-6">
-                  <div className="text-sm text-text-secondary mb-2">Активных согласий</div>
-                  <div className="text-3xl font-bold text-ink">{stats.active_consents}</div>
-                </div>
-              </Card>
+                <Card>
+                  <div className="p-6">
+                    <div className="text-sm text-text-secondary mb-2">Активных согласий</div>
+                    <div className="text-3xl font-bold text-ink">{stats.active_consents || 0}</div>
+                  </div>
+                </Card>
 
-              <Card>
-                <div className="p-6">
-                  <div className="text-sm text-text-secondary mb-2">Договоров</div>
-                  <div className="text-3xl font-bold text-ink">{stats.active_agreements}</div>
-                </div>
-              </Card>
-            </div>
+                <Card>
+                  <div className="p-6">
+                    <div className="text-sm text-text-secondary mb-2">Договоров</div>
+                    <div className="text-3xl font-bold text-ink">{stats.active_agreements || 0}</div>
+                  </div>
+                </Card>
+              </div>
+            )}
           </div>
         )}
 

@@ -312,3 +312,143 @@ body::after {
   filter: drop-shadow(0 0 25px rgba(74, 205, 177, 0.28));
 }
 
+/* ============================================
+   PWA & Mobile Optimizations
+   ============================================ */
+
+/* Safe area insets for notched devices */
+@supports (padding: env(safe-area-inset-top)) {
+  body {
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+  }
+}
+
+/* Touch-friendly tap targets (min 44x44 for iOS) */
+@media (max-width: 768px) {
+  button,
+  a,
+  input[type="button"],
+  input[type="submit"],
+  [role="button"] {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  /* Larger text for better readability on mobile */
+  body {
+    font-size: 16px; /* Prevents iOS zoom on input focus */
+  }
+
+  /* Better spacing for cards on mobile */
+  .card-grid {
+    gap: 1rem;
+  }
+
+  /* Improved modal sizing on mobile */
+  [role="dialog"] {
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+
+  /* Sticky headers for better navigation */
+  .mobile-header {
+    position: sticky;
+    top: 0;
+    z-index: 40;
+    backdrop-filter: blur(12px);
+  }
+}
+
+/* PWA Install animation */
+@keyframes slide-up {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.animate-slide-up {
+  animation: slide-up 0.3s ease-out;
+}
+
+/* Prevent pull-to-refresh in PWA */
+body.pwa {
+  overscroll-behavior-y: contain;
+}
+
+/* iOS specific fixes */
+@supports (-webkit-touch-callout: none) {
+  /* Fix for iOS Safari bottom bar */
+  body {
+    min-height: -webkit-fill-available;
+  }
+
+  /* Prevent iOS from adding tap highlight */
+  * {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Better input styling on iOS */
+  input,
+  textarea,
+  select {
+    -webkit-appearance: none;
+    border-radius: 0;
+  }
+}
+
+/* Dark mode for PWA splash screen */
+@media (prefers-color-scheme: dark) {
+  body {
+    background-color: #0e1728;
+  }
+}
+
+/* Loading skeleton for better perceived performance */
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.1) 0%,
+    rgba(255, 255, 255, 0.2) 50%,
+    rgba(255, 255, 255, 0.1) 100%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-loading 1.5s ease-in-out infinite;
+}
+
+@keyframes skeleton-loading {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* Better focus indicators for accessibility and keyboard navigation */
+@media (prefers-reduced-motion: no-preference) {
+  :focus-visible {
+    outline: 2px solid rgba(36, 176, 154, 0.6);
+    outline-offset: 2px;
+    border-radius: 0.5rem;
+  }
+}
+
+/* Improved scroll behavior for PWA */
+html {
+  scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
+

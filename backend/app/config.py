@@ -29,6 +29,10 @@ class Settings(BaseSettings):
     # GOST Configuration
     USE_GOST: bool = False
     GOST_API_BASE: str = "https://api.gost.bankingapi.ru:8443"
+    GOST_CLIENT_ID: str = "team075"
+    GOST_CLIENT_SECRET: str = "1IbEJkXNjswkQLNCqZiYW4mgVSvuC8Di"
+    GOST_CERT_NAME: str = "VTB Test User"
+    GOST_CSPTEST_PATH: str = r"C:\Program Files\Crypto Pro\CSP\csptest.exe"
     
     # Banking API URLs
     BANKING_API_URL: str = "https://api.bankingapi.ru"
@@ -36,6 +40,10 @@ class Settings(BaseSettings):
     
     # CORS
     CORS_ORIGINS: str = "http://localhost:3000,http://localhost:5173,http://127.0.0.1:3000,http://127.0.0.1:5173"
+    
+    # MyBank
+    MYBANK_API_BASE_URL: str = "http://mybank-api:8001"
+    DEFAULT_MYBANK_PASSWORD: str = "MyBankPass123!"
     
     @property
     def cors_origins_list(self) -> list[str]:
@@ -50,3 +58,6 @@ class Settings(BaseSettings):
 
 
 settings = Settings()
+
+# Export constants for convenience
+DEFAULT_MYBANK_PASSWORD = settings.DEFAULT_MYBANK_PASSWORD

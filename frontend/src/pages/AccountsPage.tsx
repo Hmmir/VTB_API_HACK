@@ -11,13 +11,15 @@ import { formatCurrency, formatCompactCurrency } from '../utils/formatters';
 const BANK_NAMES: Record<string, string> = {
   vbank: 'Virtual Bank',
   abank: 'Awesome Bank',
-  sbank: 'Smart Bank'
+  sbank: 'Smart Bank',
+  mybank: 'MyBank'
 };
 
 const BANK_ICONS: Record<string, string> = {
   vbank: '💜',
   abank: '🟢',
-  sbank: '🔵'
+  sbank: '🔵',
+  mybank: '🏦'
 };
 
 type TransferForm = {
@@ -236,6 +238,11 @@ const AccountsPage = () => {
     }),
   [accounts, connections]);
 
+  // MyBank счета без подключения (созданные для целей)
+  const mybankAccountsWithoutConnection = useMemo(() =>
+    accounts.filter((acc) => !acc.bank_connection_id && (acc.bank_provider === 'mybank' || acc.bank_name === 'MyBank')),
+  [accounts]);
+
   const accountOptions = useMemo(
     () =>
       accounts.map((account) => ({
@@ -284,16 +291,25 @@ const AccountsPage = () => {
         </div>
               <div className="flex flex-col items-stretch gap-3 rounded-[1.4rem] border border-white/30 bg-white/70 p-5 shadow-[0_20px_45px_rgba(14,23,40,0.12)]">
                 <div className="text-xs uppercase tracking-[0.32em] text-ink/40">Быстрые действия</div>
-                <Button variant="primary" size="lg" onClick={() => setConnectModalOpen(true)}>
+                <Button 
+                  variant="primary" 
+                  size="lg" 
+                  onClick={() => {
+                    const FREE_PLAN_BANKS_LIMIT = 7;
+                    if (connections.length >= FREE_PLAN_BANKS_LIMIT) {
+                      toast.error('Достигнут лимит банков в бесплатном плане (7). Оформите Premium для неограниченных подключений!');
+                      return;
+                    }
+                    setConnectModalOpen(true);
+                  }}
+                >
                   <span className="text-lg">+</span>
                   <span className="ml-2">Подключить банк</span>
+                  {connections.length >= 3 && <span className="ml-2 text-xs opacity-75">(Premium)</span>}
                 </Button>
                 <Button variant="ghost" onClick={() => handleOpenTransfer()} className="border border-white/40 bg-white/60 text-ink">
                   Перевод между счетами
                 </Button>
-                <div className="rounded-[1.1rem] border border-white/40 bg-white/60 px-4 py-3 text-xs text-ink/55">
-                  Premium автоматизирует перевод средств, удерживает остатки и уведомляет о кассовых разрывах.
-                </div>
               </div>
             </div>
 
@@ -314,22 +330,6 @@ const AccountsPage = () => {
               </div>
             </Card>
           </div>
-        </Card>
-
-        <Card className="relative overflow-hidden bg-gradient-to-br from-primary-500 to-primary-700 p-7 text-white">
-          <span className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.22),transparent_70%)]" />
-          <div className="relative z-10 space-y-4">
-            <p className="text-xs uppercase tracking-[0.32em] text-white/70">Premium «Cashflow Autopilot»</p>
-            <h2 className="font-display text-2xl">Автоматические распределения и сценарии кассовых разрывов</h2>
-            <ul className="space-y-2 text-sm text-white/80">
-              <li>• Автоматическое смещение остатков по правилам и целям</li>
-              <li>• Push-уведомления при снижении остатка ниже лимита</li>
-              <li>• A/B тест балансировки между кредитными линиями</li>
-            </ul>
-            <Button variant="ghost" className="bg-white/20 text-white hover:bg-white/30">
-              Подключить Premium 14 дней
-        </Button>
-      </div>
         </Card>
       </section>
 
@@ -448,6 +448,68 @@ const AccountsPage = () => {
               </Card>
             );
           })}
+
+          {/* MyBank счета без подключения (созданные для целей) */}
+          {mybankAccountsWithoutConnection.length > 0 && (
+            <Card className="relative overflow-hidden border border-white/50 bg-gradient-to-br from-white/90 via-white/80 to-white/70 p-6">
+              <div className="flex items-start justify-between gap-4">
+                <div className="space-y-1">
+                  <p className="text-xs uppercase tracking-[0.32em] text-ink/40">Банк</p>
+                  <h3 className="text-2xl font-semibold text-ink">🏦 MyBank</h3>
+                  <p className="text-sm text-ink/60">
+                    {mybankAccountsWithoutConnection.length} счет(а) • {formatCompactCurrency(mybankAccountsWithoutConnection.reduce((sum, acc) => sum + Number(acc.balance), 0))} ₽
+                  </p>
+                  <p className="text-xs text-ink/40">Счета целей</p>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="border border-white/40 bg-white/60 text-xs uppercase tracking-[0.22em] text-ink" 
+                    onClick={() => setExpandedBank(expandedBank === 'mybank' ? null : 'mybank')}
+                  >
+                    {expandedBank === 'mybank' ? 'Свернуть' : 'Показать счета'}
+                  </Button>
+                </div>
+              </div>
+
+              {expandedBank === 'mybank' && (
+                <div className="mt-6 grid gap-4 md:grid-cols-2">
+                  {mybankAccountsWithoutConnection.map((account) => (
+                    <Card key={account.id} className="relative overflow-hidden bg-white/80 p-5">
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="space-y-1">
+                          <p className="text-xs uppercase tracking-[0.26em] text-ink/40">{account.account_type?.toUpperCase() || 'GOAL'}</p>
+                          <h4 className="text-lg font-semibold text-ink">{account.account_name}</h4>
+                          {account.account_number && (
+                            <p className="text-xs text-ink/50">{account.account_number}</p>
+                          )}
+                        </div>
+                        <div className="text-right">
+                          <p className="text-xs text-ink/45">Баланс</p>
+                          <p className="text-lg font-semibold text-ink">{formatCurrency(Number(account.balance))} ₽</p>
+                        </div>
+                      </div>
+
+                      <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-white/40 pt-3 text-xs text-ink/50">
+                        <span>Счет цели MyBank</span>
+                        <div className="flex gap-2">
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="border border-white/40 bg-white/60 text-ink" 
+                            onClick={() => handleOpenTransfer(account.id)}
+                          >
+                            Перевести
+                          </Button>
+                        </div>
+                      </div>
+                    </Card>
+                  ))}
+                </div>
+              )}
+            </Card>
+          )}
         </div>
       )}
       </section>
@@ -519,10 +581,6 @@ const AccountsPage = () => {
               className="input-field min-h-[100px]"
               placeholder="Например: перемещение под финансовую цель"
             />
-          </div>
-
-          <div className="rounded-[1.1rem] border border-white/40 bg-white/60 px-4 py-3 text-xs text-ink/55">
-            Переводы выполняются мгновенно. Premium позволит настроить расписание и правила автоперераспределения.
           </div>
 
           <div className="flex justify-end gap-2">

@@ -201,15 +201,6 @@ const BudgetsPage = () => {
                   <span className="text-lg">+</span>
                   <span className="ml-2">Создать бюджет</span>
                 </Button>
-                {premiumLimitReached ? (
-                  <div className="rounded-[1.1rem] border border-roseflare/40 bg-roseflare/10 px-4 py-3 text-xs text-roseflare">
-                    Три конверта активны. Разблокируйте <span className="font-semibold">неограниченные бюджеты</span> в Premium.
-                  </div>
-                ) : (
-                  <div className="rounded-[1.1rem] border border-white/40 bg-white/60 px-4 py-3 text-xs text-ink/55">
-                    Хватит 30 секунд: выберите категорию, лимит и период - алгоритм начнёт отслеживание сразу.
-                  </div>
-                )}
               </div>
             </div>
 
@@ -234,23 +225,6 @@ const BudgetsPage = () => {
                 <p className="mt-2 text-xs text-ink/50">Подготовим автоматический перенос лимитов</p>
               </Card>
             </div>
-          </div>
-        </Card>
-
-        <Card className="relative overflow-hidden bg-gradient-to-br from-roseflare/80 via-roseflare to-roseflare/90 p-7 text-white">
-          <span className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.22),transparent_70%)]" />
-          <div className="relative z-10 space-y-4">
-            <p className="text-xs uppercase tracking-[0.32em] text-white/70">Premium «Автопилот бюджета»</p>
-            <h2 className="font-display text-2xl">Подключите автоперенос и прогноз до 180 дней</h2>
-            <ul className="space-y-2 text-sm text-white/85">
-              <li>• Автоматическая коррекция лимитов при пиковых расходах</li>
-              <li>• Smart-уведомления о кассовых разрывах в Telegram / email</li>
-              <li>• Совместное управление бюджетом с партнёром или бухгалтером</li>
-            </ul>
-            <Button variant="ghost" className="bg-white/20 text-white hover:bg-white/30">
-              Попробовать Premium 14 дней бесплатно
-            </Button>
-            <p className="text-xs text-white/60">Средняя экономия пользователей Premium - 12 400 ₽ за квартал</p>
           </div>
         </Card>
       </section>
@@ -375,13 +349,6 @@ const BudgetsPage = () => {
                             >
                               Удалить
                             </Button>
-                            <Button
-                              variant="secondary"
-                              size="sm"
-                              className="border border-primary-200 bg-white/70 text-xs uppercase tracking-[0.22em] text-primary-700"
-                            >
-                              Оптимизировать (Premium)
-                            </Button>
                         </div>
                       </div>
                     </>
@@ -464,10 +431,6 @@ const BudgetsPage = () => {
               </div>
             </div>
 
-          <div className="rounded-[1.1rem] border border-primary-100 bg-primary-50/70 px-4 py-3 text-xs text-ink/55">
-            Premium-пользователи могут включить «Автопилот», чтобы перераспределять остатки между бюджетами автоматически.
-          </div>
-
           <div className="flex justify-end gap-2">
               <Button
                 type="button"
@@ -483,6 +446,27 @@ const BudgetsPage = () => {
             </div>
           </form>
       </Modal>
+
+      {/* Premium Upgrade Banner */}
+      <Card className="relative overflow-hidden bg-gradient-to-br from-blue-100 via-blue-50 to-white/70 p-8 mt-8">
+        <span className="pointer-events-none absolute -right-16 -top-16 h-48 w-48 rounded-full bg-blue-300/30 blur-3xl" />
+        <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-6">
+          <div className="space-y-2">
+            <h3 className="text-2xl font-display text-ink">🤖 Умное управление бюджетом с Premium</h3>
+            <p className="text-sm text-ink/70">
+              Автоматические уведомления о превышениях, совместные семейные бюджеты, AI-советы по экономии.
+              Пользователи Premium экономят в среднем 12 400 ₽ за квартал.
+            </p>
+          </div>
+          <Button 
+            variant="primary" 
+            onClick={() => window.location.href = '/premium'}
+            className="whitespace-nowrap px-8 py-3"
+          >
+            Узнать больше
+          </Button>
+        </div>
+      </Card>
     </div>
   );
 };

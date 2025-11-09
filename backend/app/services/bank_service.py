@@ -123,6 +123,69 @@ class BankService:
         ).all()
     
     @staticmethod
+    async def refresh_access_token(
+        db: Session,
+        connection: BankConnection
+    ) -> str:
+        """
+        Refresh OAuth access token if expired.
+        
+        Returns: New or existing valid access token
+        """
+        # Check if token is expired or will expire in next 5 minutes
+        from datetime import timedelta
+        
+        if connection.token_expires_at:
+            time_until_expiry = connection.token_expires_at - datetime.utcnow()
+            if time_until_expiry > timedelta(minutes=5):
+                # Token still valid, return it
+                return decrypt_token(connection.access_token_encrypted)
+        
+        # Token expired or no expiry set - refresh it
+        if not connection.refresh_token_encrypted:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="No refresh token available. User must reconnect bank."
+            )
+        
+        refresh_token = decrypt_token(connection.refresh_token_encrypted)
+        
+        async with VTBAPIClient() as api_client:
+            try:
+                # Call token refresh endpoint
+                token_response = await api_client.refresh_token(
+                    connection.bank_provider.value,
+                    refresh_token
+                )
+                
+                # Update connection with new tokens
+                connection.access_token_encrypted = encrypt_token(token_response["access_token"])
+                
+                if "refresh_token" in token_response:
+                    connection.refresh_token_encrypted = encrypt_token(token_response["refresh_token"])
+                
+                if "expires_in" in token_response:
+                    connection.token_expires_at = datetime.utcnow() + timedelta(seconds=token_response["expires_in"])
+                
+                connection.last_synced_at = datetime.utcnow()
+                connection.status = ConnectionStatus.ACTIVE
+                connection.error_message = None
+                
+                db.commit()
+                db.refresh(connection)
+                
+                return token_response["access_token"]
+                
+            except Exception as e:
+                connection.status = ConnectionStatus.ERROR
+                connection.error_message = f"Token refresh failed: {str(e)}"
+                db.commit()
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail=f"Failed to refresh token: {str(e)}"
+                )
+    
+    @staticmethod
     async def sync_connection(
         db: Session,
         user: User,
@@ -141,8 +204,8 @@ class BankService:
                 detail="Bank connection not found"
             )
         
-        # Decrypt access token
-        access_token = decrypt_token(connection.access_token_encrypted)
+        # Refresh token if needed
+        access_token = await BankService.refresh_access_token(db, connection)
         
         # Sync accounts
         await BankService._sync_accounts(db, connection, access_token)

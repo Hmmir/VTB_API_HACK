@@ -63,7 +63,73 @@ const RecommendationsPage = () => {
           details: rec.details || {}
         };
       });
-      setRecommendations(mapped);
+      if (mapped.length > 0) {
+        setRecommendations(mapped);
+        return;
+      }
+
+      // Создаем fallback-рекомендации на основе аналитики, если бэкенд ничего не вернул
+      const summary = await api.getAnalyticsSummary(90).catch(() => null);
+      const categories = await api.getExpensesByCategory(90).catch(() => []);
+
+      const fallback: RecommendationView[] = [];
+
+      if (summary) {
+        const expenseShare = summary.total_income > 0 ? (summary.total_expenses / summary.total_income) * 100 : 0;
+        if (expenseShare >= 80) {
+          fallback.push({
+            id: 'fallback-budget-control',
+            type: 'budget_control',
+            priority: 'high',
+            title: '⚠️ Расходы достигают 80% от доходов',
+            description: 'Создайте семейный бюджет и лимиты на категории, чтобы держать траты под контролем.',
+            action: 'Открыть бюджеты',
+            estimated_benefit: `Экономия до ${(summary.total_expenses * 0.15).toFixed(0)} ₽/мес`,
+            details: {
+              monthly_income: summary.total_income.toFixed(0),
+              monthly_expenses: summary.total_expenses.toFixed(0),
+              expense_share: `${expenseShare.toFixed(1)}%`
+            }
+          });
+        }
+
+        if (summary.net_balance > 20000) {
+          fallback.push({
+            id: 'fallback-goal-savings',
+            type: 'family_goal',
+            priority: 'medium',
+            title: '💰 Направьте свободные средства в цели',
+            description: `Свободный остаток за 3 месяца составил ${summary.net_balance.toFixed(0)} ₽. Настройте семейную цель и переводите в MyBank автоматом.`,
+            action: 'Создать цель',
+            estimated_benefit: `${(summary.net_balance * 0.05).toFixed(0)} ₽/мес`,
+            details: {
+              net_balance: summary.net_balance.toFixed(0),
+              goals_created: summary.goal_progress?.length ?? 0
+            }
+          });
+        }
+      }
+
+      if (Array.isArray(categories) && categories.length > 0) {
+        const [topCategory] = categories;
+        if (topCategory) {
+          fallback.push({
+            id: 'fallback-category-focus',
+            type: 'category_focus',
+            priority: 'medium',
+            title: `🎯 Категория “${topCategory.category}” лидирует по расходам`,
+            description: 'Установите семейный бюджет и лимиты на эту категорию, чтобы сократить лишние траты.',
+            action: 'Настроить лимит',
+            estimated_benefit: `${(Number(topCategory.amount) * 0.1).toFixed(0)} ₽ в месяц`,
+            details: {
+              category_spending: Number(topCategory.amount).toFixed(0),
+              transactions: topCategory.count ?? 0
+            }
+          });
+        }
+      }
+
+      setRecommendations(fallback);
     } catch (error) {
       console.error('Recommendations error:', error);
       setRecommendations([]);
@@ -100,15 +166,6 @@ const RecommendationsPage = () => {
                   <span className="font-semibold text-primary-700">{highPriorityCount}</span> рекомендаций требуют внимания прямо сейчас.
                 </p>
               </div>
-              <div className="flex flex-col gap-3 rounded-[1.4rem] border border-white/30 bg-white/70 p-5 shadow-[0_20px_45px_rgba(14,23,40,0.12)]">
-                <div className="text-xs uppercase tracking-[0.32em] text-ink/40">Premium выгода</div>
-                <Button variant="primary" size="lg">
-                  Подключить автодействия
-                </Button>
-                <div className="rounded-[1.1rem] border border-white/40 bg-white/60 px-4 py-3 text-xs text-ink/55">
-                  Premium автоматически исполняет задачи: переводит средства, оформляет продукты партнёров и контролирует выполнение.
-                </div>
-              </div>
             </div>
 
             <Card className="bg-white/80 p-6 shadow-none">
@@ -131,11 +188,11 @@ const RecommendationsPage = () => {
           <span className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.22),transparent_70%)]" />
           <div className="relative z-10 space-y-4 text-ink">
             <p className="text-xs uppercase tracking-[0.32em] text-ink/45">Монетизация рекомендаций</p>
-            <h2 className="font-display text-xl">Превращайте советы в выручку: партнёрские продукты, upsell Premium, retention</h2>
+            <h2 className="font-display text-xl">Превращайте советы в выручку: партнёрские продукты, retention</h2>
             <ul className="space-y-2 text-sm text-ink/70">
               <li>• Интегрируйте офферы банков напрямую в карточку рекомендации</li>
               <li>• Отслеживайте, сколько экономии принесла каждая подсказка</li>
-              <li>• В Premium включите автоматическую отправку и контроль исполнения</li>
+              <li>• Включите автоматическую отправку и контроль исполнения</li>
             </ul>
             <Button variant="ghost" className="border border-white/40 bg-white/60 text-ink">
               Узнать о сценариях монетизации
@@ -196,14 +253,43 @@ const RecommendationsPage = () => {
                     )}
 
                     <div className="flex flex-wrap items-center justify-between gap-3 border-t border-white/40 pt-4">
-                      <Button variant="primary" className="text-xs uppercase tracking-[0.22em]">
+                      <Button 
+                        variant="primary" 
+                        className="text-xs uppercase tracking-[0.22em]"
+                        onClick={() => {
+                          // Перенаправляем на соответствующую страницу в зависимости от типа рекомендации
+                          if (rec.type === 'budget_control' || rec.type === 'category_focus') {
+                            window.location.href = '/budgets';
+                          } else if (rec.type === 'family_goal' || rec.type === 'savings') {
+                            window.location.href = '/goals';
+                          } else if (rec.type === 'deposit' || rec.type === 'investment' || rec.type === 'cashback') {
+                            window.location.href = '/products';
+                          } else {
+                            toast('Функция в разработке', { icon: 'ℹ️' });
+                          }
+                        }}
+                      >
                         {rec.action}
                       </Button>
                       <div className="flex items-center gap-2">
-                        <Button variant="ghost" className="border border-white/40 bg-white/60 text-xs uppercase tracking-[0.22em] text-ink">
+                        <Button 
+                          variant="ghost" 
+                          className="border border-white/40 bg-white/60 text-xs uppercase tracking-[0.22em] text-ink"
+                          onClick={() => {
+                            setRecommendations(prev => prev.filter(r => r.id !== rec.id));
+                            toast.success('Рекомендация отмечена выполненной');
+                          }}
+                        >
                           Отметить выполненным
                         </Button>
-                        <Button variant="ghost" className="border border-white/40 bg-white/60 text-xs uppercase tracking-[0.22em] text-ink/60">
+                        <Button 
+                          variant="ghost" 
+                          className="border border-white/40 bg-white/60 text-xs uppercase tracking-[0.22em] text-ink/60"
+                          onClick={() => {
+                            setRecommendations(prev => prev.filter(r => r.id !== rec.id));
+                            toast('Рекомендация отложена', { icon: '⏸️' });
+                          }}
+                        >
                           Отложить
                         </Button>
                       </div>

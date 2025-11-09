@@ -3,6 +3,8 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from typing import List, Dict, Any
 from datetime import datetime, timedelta
+from decimal import Decimal
+
 from app.database import get_db
 from app.api.dependencies import get_current_user
 from app.models.user import User
@@ -34,7 +36,8 @@ def get_recommendations(
     total_balance = db.query(func.sum(Account.balance)).filter(
         Account.id.in_(account_ids)
     ).scalar() or 0
-    
+    balance_float = float(total_balance) if isinstance(total_balance, Decimal) else float(total_balance)
+
     # Calculate monthly income and expenses (last 30 days)
     end_date = datetime.utcnow()
     start_date = end_date - timedelta(days=30)
@@ -51,11 +54,12 @@ def get_recommendations(
         Transaction.transaction_date >= start_date
     ).scalar() or 0
     
-    net_savings = income - expenses
+    income_float = float(income) if isinstance(income, Decimal) else float(income)
+    expenses_float = float(expenses) if isinstance(expenses, Decimal) else float(expenses)
+    net_savings = income_float - expenses_float
     
     # Recommendation 1: Deposit for large positive balance
-    if total_balance > 50000:
-        balance_float = float(total_balance)
+    if balance_float > 50000:
         monthly_income = balance_float * 0.08 / 12
         recommendations.append({
             "id": "deposit-recommendation",
@@ -84,60 +88,60 @@ def get_recommendations(
             "action": "Открыть накопительный счет",
             "estimated_benefit": f"+{net_savings * 0.07 / 12:,.0f} ₽/мес",
             "details": {
-                "monthly_savings": float(net_savings),
+                "monthly_savings": net_savings,
                 "interest_rate": 7.0,
-                "potential_income": float(net_savings * 0.07 / 12)
+                "potential_income": net_savings * 0.07 / 12
             }
         })
     
     # Recommendation 3: Budget optimization if high expenses
-    if expenses > income * 0.8:
+    if income_float > 0 and expenses_float > income_float * 0.8:
         recommendations.append({
             "id": "budget-recommendation",
             "type": "budget",
             "priority": "high",
             "title": "⚠️ Оптимизируйте расходы",
-            "description": f"Ваши расходы составляют {(expenses/income*100):,.0f}% от доходов. Создайте бюджеты по категориям для контроля трат.",
+            "description": f"Ваши расходы составляют {(expenses_float/income_float*100):,.0f}% от доходов. Создайте бюджеты по категориям для контроля трат.",
             "action": "Создать бюджет",
-            "estimated_benefit": f"Экономия до {expenses * 0.15:,.0f} ₽/мес",
+            "estimated_benefit": f"Экономия до {expenses_float * 0.15:,.0f} ₽/мес",
             "details": {
-                "monthly_income": float(income),
-                "monthly_expenses": float(expenses),
-                "expense_ratio": float(expenses / income * 100) if income > 0 else 0,
-                "potential_savings": float(expenses * 0.15)
+                "monthly_income": income_float,
+                "monthly_expenses": expenses_float,
+                "expense_ratio": float(expenses_float / income_float * 100) if income_float > 0 else 0,
+                "potential_savings": float(expenses_float * 0.15)
             }
         })
     
     # Recommendation 4: Credit card cashback
-    if expenses > 30000:
+    if expenses_float > 30000:
         recommendations.append({
             "id": "cashback-recommendation",
             "type": "credit_card",
             "priority": "medium",
             "title": "💳 Оформите карту с кэшбэком",
-            "description": f"При тратах ~{expenses:,.0f} ₽/мес с кэшбэком 3% вы будете возвращать {expenses * 0.03:,.0f} ₽ ежемесячно.",
+            "description": f"При тратах ~{expenses_float:,.0f} ₽/мес с кэшбэком 3% вы будете возвращать {expenses_float * 0.03:,.0f} ₽ ежемесячно.",
             "action": "Подобрать карту",
-            "estimated_benefit": f"+{expenses * 0.03:,.0f} ₽/мес",
+            "estimated_benefit": f"+{expenses_float * 0.03:,.0f} ₽/мес",
             "details": {
-                "monthly_spending": float(expenses),
+                "monthly_spending": expenses_float,
                 "cashback_rate": 3.0,
-                "monthly_cashback": float(expenses * 0.03),
-                "yearly_cashback": float(expenses * 0.03 * 12)
+                "monthly_cashback": float(expenses_float * 0.03),
+                "yearly_cashback": float(expenses_float * 0.03 * 12)
             }
         })
     
     # Recommendation 5: Investment if stable income and good savings
-    if income > 80000 and net_savings > 20000:
+    if income_float > 80000 and net_savings > 20000:
         recommendations.append({
             "id": "investment-recommendation",
             "type": "investment",
             "priority": "low",
             "title": "📈 Рассмотрите инвестиционные продукты",
-            "description": f"Со стабильным доходом {income:,.0f} ₽/мес вы можете начать инвестировать через ИИС с налоговым вычетом до 52,000 ₽.",
+            "description": f"Со стабильным доходом {income_float:,.0f} ₽/мес вы можете начать инвестировать через ИИС с налоговым вычетом до 52,000 ₽.",
             "action": "Открыть ИИС",
             "estimated_benefit": "Налоговый вычет до 52,000 ₽/год",
             "details": {
-                "monthly_income": float(income),
+                "monthly_income": income_float,
                 "recommended_investment": float(min(net_savings * 0.5, 400000 / 12)),
                 "max_tax_deduction": 52000
             }

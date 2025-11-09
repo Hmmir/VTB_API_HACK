@@ -42,13 +42,39 @@ const ProductsPage = () => {
     loadData();
   }, []);
 
+  const handleSignAgreement = async (agreementId: string) => {
+    try {
+      await api.post(`/products/agreements/${agreementId}/sign`, {
+        signature: "SIGNED_BY_USER"  // Demo signature
+      });
+      toast.success('Договор успешно подписан!');
+      loadData(); // Перезагружаем данные
+    } catch (error: any) {
+      console.error('Sign agreement error:', error);
+      toast.error(error?.response?.data?.detail || 'Не удалось подписать договор');
+    }
+  };
+
   const loadData = async () => {
     try {
       setLoading(true);
       
       // Загружаем продукты из всех банков
       const productsData = await api.getBankProducts({});
-      setProducts(Array.isArray(productsData.products) ? productsData.products : []);
+      console.log('📦 Products data:', productsData);
+      
+      // Обработка разных форматов ответа
+      let productsList = [];
+      if (Array.isArray(productsData)) {
+        productsList = productsData;
+      } else if (productsData.products && Array.isArray(productsData.products)) {
+        productsList = productsData.products;
+      } else if (productsData.data && Array.isArray(productsData.data)) {
+        productsList = productsData.data;
+      }
+      
+      console.log('📦 Products list:', productsList);
+      setProducts(productsList);
       
       // Загружаем счета пользователя
       const accountsData = await api.getAccounts();
@@ -201,7 +227,11 @@ const ProductsPage = () => {
                   </div>
 
                   {agreement.status === 'draft' && (
-                    <Button variant="primary" className="w-full">
+                    <Button 
+                      variant="primary" 
+                      className="w-full"
+                      onClick={() => handleSignAgreement(agreement.id)}
+                    >
                       Подписать договор
                     </Button>
                   )}

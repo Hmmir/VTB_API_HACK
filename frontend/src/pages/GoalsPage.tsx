@@ -7,7 +7,10 @@ import toast from 'react-hot-toast';
 import type { Goal as GoalType } from '../types';
 
 const formatCurrency = (value: number, fractionDigits = 0) =>
-  value.toLocaleString('ru-RU', { maximumFractionDigits: fractionDigits });
+  value.toLocaleString('ru-RU', { 
+    minimumFractionDigits: fractionDigits,
+    maximumFractionDigits: fractionDigits 
+  });
 
 type GoalView = GoalType & {
   progress: number;
@@ -55,6 +58,8 @@ const GoalsPage = () => {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [contributionGoal, setContributionGoal] = useState<GoalType | null>(null);
   const [contributionAmount, setContributionAmount] = useState('');
+  const [contributionCardId, setContributionCardId] = useState('');
+  const [accounts, setAccounts] = useState<any[]>([]);
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -65,7 +70,19 @@ const GoalsPage = () => {
 
   useEffect(() => {
     void loadGoals();
+    void loadAccounts();
   }, []);
+
+  const loadAccounts = async () => {
+    try {
+      // Загружаем ВСЕ счета из всех банков для взносов в цели
+      const allAccounts = await api.getAccounts();
+      console.log('💳 All accounts loaded:', allAccounts);
+      setAccounts(allAccounts);
+    } catch (error) {
+      console.error('Failed to load accounts:', error);
+    }
+  };
 
   const loadGoals = async () => {
     try {
@@ -81,11 +98,23 @@ const GoalsPage = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Freemium ограничение: максимум 5 целей в бесплатном плане
+    const FREE_PLAN_GOALS_LIMIT = 5;
+    if (goals.length >= FREE_PLAN_GOALS_LIMIT) {
+      toast.error('Достигнут лимит целей в бесплатном плане (5). Оформите Premium для неограниченных целей!');
+      return;
+    }
+    
     try {
       // Преобразуем дату в ISO формат если указана
-      const targetDateTime = formData.target_date 
-        ? new Date(formData.target_date + 'T23:59:59').toISOString()
-        : undefined;
+      let targetDateTime: string | undefined = undefined;
+      if (formData.target_date && formData.target_date.trim()) {
+        const date = new Date(formData.target_date + 'T23:59:59');
+        if (!isNaN(date.getTime())) {
+          targetDateTime = date.toISOString();
+        }
+      }
       
       await api.createGoal({
         name: formData.name,
@@ -106,6 +135,8 @@ const GoalsPage = () => {
       });
       loadGoals();
     } catch (error: any) {
+      console.error('❌ Goal creation error:', error);
+      console.error('❌ Error response:', error.response?.data);
       toast.error(error.response?.data?.detail || 'Ошибка создания цели');
     }
   };
@@ -124,6 +155,7 @@ const GoalsPage = () => {
   const handleContribute = (goal: GoalType) => {
     setContributionGoal(goal);
     setContributionAmount('');
+    setContributionCardId('');
   };
 
   const submitContribution = async (e: React.FormEvent) => {
@@ -134,13 +166,15 @@ const GoalsPage = () => {
     }
 
     try {
-      await api.contributeToGoal(contributionGoal.id, Number(contributionAmount));
+      await api.contributeToGoal(contributionGoal.id, Number(contributionAmount), contributionCardId || undefined);
       toast.success('Взнос добавлен!');
       setContributionGoal(null);
       setContributionAmount('');
+      setContributionCardId('');
       loadGoals();
-    } catch (error) {
-      toast.error('Ошибка добавления взноса');
+    } catch (error: any) {
+      console.error('Contribution error:', error);
+      toast.error(error?.response?.data?.detail || 'Ошибка добавления взноса');
     }
   };
 
@@ -222,9 +256,6 @@ const GoalsPage = () => {
                   <span className="text-lg">+</span>
                   <span className="ml-2">Создать цель</span>
                 </Button>
-                <div className="rounded-[1.1rem] border border-white/40 bg-white/60 px-4 py-3 text-xs text-ink/55">
-                  Premium ускоряет цели через автоматическое распределение бюджета и персональные сценарии накоплений.
-                </div>
               </div>
       </div>
 
@@ -251,23 +282,6 @@ const GoalsPage = () => {
                 </p>
               </Card>
             </div>
-          </div>
-        </Card>
-
-        <Card className="relative overflow-hidden bg-gradient-to-br from-primary-500 to-primary-700 p-7 text-white">
-          <span className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.22),transparent_70%)]" />
-          <div className="relative z-10 space-y-4">
-            <p className="text-xs uppercase tracking-[0.32em] text-white/70">Premium «Акселератор целей»</p>
-            <h2 className="font-display text-2xl">Прогнозируйте, ускоряйте, делитесь прогрессом</h2>
-            <ul className="space-y-2 text-sm text-white/80">
-              <li>• Авторасчёт еженедельных взносов и уведомления о кассовых разрывах</li>
-              <li>• Совместные цели с семьёй или партнёрами, настройка доступов</li>
-              <li>• Интеллектуальные сценарии «что если» для ускоренного достижения</li>
-            </ul>
-            <Button variant="ghost" className="bg-white/20 text-white hover:bg-white/30">
-              Попробовать Premium 14 дней бесплатно
-            </Button>
-            <p className="text-xs text-white/60">Средний клиент достигает цели на 3 месяца раньше</p>
           </div>
         </Card>
       </section>
@@ -441,10 +455,6 @@ const GoalsPage = () => {
               />
             </div>
 
-          <div className="rounded-[1.1rem] border border-primary-100 bg-primary-50/70 px-4 py-3 text-xs text-ink/55">
-            Premium добавит сценарии ускорения и напомнит о еженедельно оптимальной сумме взноса.
-          </div>
-
           <div className="flex justify-end gap-2">
               <Button
                 type="button"
@@ -467,6 +477,23 @@ const GoalsPage = () => {
         onClose={() => setContributionGoal(null)}
       >
         <form onSubmit={submitContribution} className="space-y-5">
+          <div className="space-y-2">
+            <label className="text-xs uppercase tracking-[0.28em] text-ink/45">Откуда перевести</label>
+            <select
+              value={contributionCardId}
+              onChange={(e) => setContributionCardId(e.target.value)}
+              className="input-field"
+            >
+              <option value="">Основной счет MyBank</option>
+              {accounts.map((acc) => (
+                <option key={acc.id} value={acc.id}>
+                  {acc.bank_name || acc.bank_provider} • {acc.account_name || acc.account_type} • {acc.balance.toLocaleString('ru-RU')} ₽
+                </option>
+              ))}
+            </select>
+            <p className="text-xs text-ink/50">Выберите счет или карту для перевода денег на цель</p>
+          </div>
+
           <div className="space-y-2">
             <label className="text-xs uppercase tracking-[0.28em] text-ink/45">Сумма (₽)</label>
             <input
@@ -504,6 +531,27 @@ const GoalsPage = () => {
             </div>
           </form>
       </Modal>
+
+      {/* Premium Upgrade Banner */}
+      <Card className="relative overflow-hidden bg-gradient-to-br from-primary-100 via-primary-50 to-white/70 p-8 mt-8">
+        <span className="pointer-events-none absolute -right-16 -top-16 h-48 w-48 rounded-full bg-primary-300/30 blur-3xl" />
+        <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-6">
+          <div className="space-y-2">
+            <h3 className="text-2xl font-display text-ink">✨ Достигайте целей быстрее с Premium</h3>
+            <p className="text-sm text-ink/70">
+              Неограниченные цели, Family Hub для совместных накоплений, AI-рекомендации по оптимизации.
+              В среднем пользователи Premium достигают целей на 3 месяца быстрее.
+            </p>
+          </div>
+          <Button 
+            variant="primary" 
+            onClick={() => window.location.href = '/premium'}
+            className="whitespace-nowrap px-8 py-3"
+          >
+            Попробовать бесплатно
+          </Button>
+        </div>
+      </Card>
     </div>
   );
 };

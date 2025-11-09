@@ -1,242 +1,323 @@
-"""Pydantic schemas for Family Banking Hub."""
-
-from __future__ import annotations
-
-from datetime import date, datetime
-from typing import List, Optional
-
+"""Family Banking Hub schemas."""
+from datetime import datetime
+from decimal import Decimal
+from typing import Optional, List
 from pydantic import BaseModel, Field
 
 from app.models.family import (
-    FamilyBudgetPeriod,
-    FamilyBudgetStatus,
-    FamilyGoalStatus,
-    FamilyMemberLimitPeriod,
-    FamilyMemberLimitStatus,
-    FamilyMemberStatus,
     FamilyRole,
+    FamilyMemberStatus,
+    FamilyBudgetPeriod,
+    FamilyGoalStatus,
     FamilyTransferStatus,
     FamilyNotificationType,
-    FamilyNotificationStatus,
 )
-from app.models.account import AccountVisibilityScope
 
 
-class FamilyCreate(BaseModel):
-    name: str = Field(..., max_length=255)
-    description: Optional[str] = None
+# ==================== Family Group Schemas ====================
+
+class FamilyGroupCreate(BaseModel):
+    """Schema for creating a family group."""
+    name: str = Field(..., min_length=1, max_length=255)
 
 
-class FamilyInviteResponse(BaseModel):
-    family_id: int
-    invite_code: str
+class FamilyGroupUpdate(BaseModel):
+    """Schema for updating a family group."""
+    name: Optional[str] = Field(None, min_length=1, max_length=255)
 
 
-class FamilyMemberBase(BaseModel):
-    id: int
-    user_id: int
-    role: FamilyRole
-    status: FamilyMemberStatus
-    joined_at: Optional[datetime]
-
-    class Config:
-        orm_mode = True
-
-
-class FamilyMemberResponse(FamilyMemberBase):
-    show_accounts: bool = True
-    default_visibility: str = "family"
-    custom_limits: Optional[dict] = None
-
-
-class FamilyResponse(BaseModel):
+class FamilyGroupResponse(BaseModel):
+    """Schema for family group response."""
     id: int
     name: str
-    description: Optional[str]
+    created_by: int
     invite_code: str
     created_at: datetime
     updated_at: datetime
-    role: FamilyRole
-    status: FamilyMemberStatus
-
+    member_count: Optional[int] = 0
+    
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
-class FamilyDetailResponse(FamilyResponse):
-    members: List[FamilyMemberResponse]
+# ==================== Family Member Schemas ====================
 
-
-class FamilyJoinRequest(BaseModel):
+class FamilyMemberInvite(BaseModel):
+    """Schema for inviting a member."""
     invite_code: str
 
 
-class FamilyMemberUpdateRequest(BaseModel):
+class FamilyMemberUpdate(BaseModel):
+    """Schema for updating a family member."""
     role: Optional[FamilyRole] = None
     status: Optional[FamilyMemberStatus] = None
 
 
+class FamilyMemberResponse(BaseModel):
+    """Schema for family member response."""
+    id: int
+    family_id: int
+    user_id: int
+    role: FamilyRole
+    status: FamilyMemberStatus
+    joined_at: datetime
+    user_name: Optional[str] = None
+    user_email: Optional[str] = None
+    
+    class Config:
+        from_attributes = True
+
+
+# ==================== Family Member Settings Schemas ====================
+
+class FamilyMemberSettingsUpdate(BaseModel):
+    """Schema for updating member settings."""
+    show_accounts: Optional[bool] = None
+    default_visibility: Optional[str] = Field(None, pattern="^(full|limited)$")
+
+
+class FamilyMemberSettingsResponse(BaseModel):
+    """Schema for member settings response."""
+    id: int
+    member_id: int
+    show_accounts: bool
+    default_visibility: str
+    custom_limits: Optional[dict] = None
+    
+    class Config:
+        from_attributes = True
+
+
+# ==================== Family Budget Schemas ====================
+
 class FamilyBudgetCreate(BaseModel):
-    name: str
-    amount: float
-    period: FamilyBudgetPeriod
+    """Schema for creating a family budget."""
     category_id: Optional[int] = None
-    start_date: Optional[date] = None
-    end_date: Optional[date] = None
+    name: str = Field(..., min_length=1, max_length=255)
+    amount: Decimal = Field(..., gt=0)
+    period: FamilyBudgetPeriod
+    start_date: datetime
+    end_date: Optional[datetime] = None
+
+
+class FamilyBudgetUpdate(BaseModel):
+    """Schema for updating a family budget."""
+    name: Optional[str] = Field(None, min_length=1, max_length=255)
+    amount: Optional[Decimal] = Field(None, gt=0)
+    period: Optional[FamilyBudgetPeriod] = None
+    end_date: Optional[datetime] = None
+    status: Optional[str] = None
 
 
 class FamilyBudgetResponse(BaseModel):
+    """Schema for family budget response."""
     id: int
-    name: str
-    amount: float
-    period: FamilyBudgetPeriod
-    status: FamilyBudgetStatus
+    family_id: int
     category_id: Optional[int]
-    start_date: Optional[date]
-    end_date: Optional[date]
+    name: str
+    amount: Decimal
+    period: FamilyBudgetPeriod
+    start_date: datetime
+    end_date: Optional[datetime]
+    status: str
     created_at: datetime
-    updated_at: datetime
-
+    current_spending: Optional[Decimal] = Decimal(0)
+    category_name: Optional[str] = None
+    usage_percentage: Optional[float] = 0.0
+    
     class Config:
-        orm_mode = True
+        from_attributes = True
 
+
+# ==================== Family Member Limit Schemas ====================
 
 class FamilyMemberLimitCreate(BaseModel):
+    """Schema for creating a member limit."""
     member_id: int
-    amount: float
-    period: FamilyMemberLimitPeriod
     category_id: Optional[int] = None
+    amount: Decimal = Field(..., gt=0)
+    period: FamilyBudgetPeriod
     auto_unlock: bool = False
 
 
+class FamilyMemberLimitUpdate(BaseModel):
+    """Schema for updating a member limit."""
+    amount: Optional[Decimal] = Field(None, gt=0)
+    period: Optional[FamilyBudgetPeriod] = None
+    auto_unlock: Optional[bool] = None
+    status: Optional[str] = None
+
+
 class FamilyMemberLimitResponse(BaseModel):
+    """Schema for member limit response."""
     id: int
+    family_id: int
     member_id: int
-    amount: float
-    period: FamilyMemberLimitPeriod
-    status: FamilyMemberLimitStatus
     category_id: Optional[int]
+    amount: Decimal
+    period: FamilyBudgetPeriod
     auto_unlock: bool
+    status: str
     created_at: datetime
-    updated_at: datetime
-
+    current_spending: Optional[Decimal] = Decimal(0)
+    member_name: Optional[str] = None
+    category_name: Optional[str] = None
+    
     class Config:
-        orm_mode = True
+        from_attributes = True
 
+
+# ==================== Family Goal Schemas ====================
 
 class FamilyGoalCreate(BaseModel):
-    name: str
-    description: Optional[str]
-    target_amount: float
-    deadline: Optional[date]
+    """Schema for creating a family goal."""
+    name: str = Field(..., min_length=1, max_length=255)
+    description: Optional[str] = None
+    target_amount: Decimal = Field(..., gt=0)
+    deadline: Optional[datetime] = None
 
 
-class FamilyGoalResponse(BaseModel):
-    id: int
-    name: str
-    description: Optional[str]
-    target_amount: float
-    current_amount: float
-    deadline: Optional[date]
-    status: FamilyGoalStatus
-    created_at: datetime
-    updated_at: datetime
-
-    class Config:
-        orm_mode = True
+class FamilyGoalUpdate(BaseModel):
+    """Schema for updating a family goal."""
+    name: Optional[str] = Field(None, min_length=1, max_length=255)
+    description: Optional[str] = None
+    target_amount: Optional[Decimal] = Field(None, gt=0)
+    deadline: Optional[datetime] = None
+    status: Optional[FamilyGoalStatus] = None
 
 
 class FamilyGoalContributionCreate(BaseModel):
-    amount: float
-    source_account_id: Optional[int] = None
-    scheduled: bool = False
-    schedule_rule: Optional[dict] = None
+    """Schema for creating a goal contribution."""
+    amount: Decimal = Field(..., gt=0)
+    source_account_id: int  # Обязательный - счет источник
 
 
 class FamilyGoalContributionResponse(BaseModel):
+    """Schema for goal contribution response."""
     id: int
     goal_id: int
     member_id: int
-    amount: float
+    amount: Decimal
     source_account_id: Optional[int]
-    scheduled: bool
-    schedule_rule: Optional[dict]
     created_at: datetime
-
+    member_name: Optional[str] = None
+    
     class Config:
-        orm_mode = True
+        from_attributes = True
 
+
+class FamilyGoalResponse(BaseModel):
+    """Schema for family goal response."""
+    id: int
+    family_id: int
+    name: str
+    description: Optional[str]
+    target_amount: Decimal
+    current_amount: Decimal
+    deadline: Optional[datetime]
+    status: FamilyGoalStatus
+    created_by: Optional[int]
+    created_at: datetime
+    completed_at: Optional[datetime]
+    progress_percentage: Optional[float] = 0
+    contributions: Optional[List[FamilyGoalContributionResponse]] = []
+    
+    class Config:
+        from_attributes = True
+
+
+# ==================== Family Transfer Schemas ====================
 
 class FamilyTransferCreate(BaseModel):
-    to_member_id: int
-    to_account_id: Optional[int]
-    from_account_id: Optional[int]
-    amount: float
-    currency: str = "RUB"
-    description: Optional[str]
+    """Schema for creating a family transfer."""
+    to_member_id: Optional[int] = None  # Опционально если указан to_account_id
+    from_account_id: Optional[int] = None
+    to_account_id: Optional[int] = None  # Можно указать конкретный счет вместо участника
+    amount: Decimal = Field(..., gt=0)
+    currency: str = Field(default="RUB", max_length=3)
+    description: Optional[str] = None
 
 
-class FamilyTransferApproveRequest(BaseModel):
-    approve: bool
+class FamilyTransferApprove(BaseModel):
+    """Schema for approving/rejecting a transfer."""
+    approved: bool
     reason: Optional[str] = None
 
 
 class FamilyTransferResponse(BaseModel):
+    """Schema for family transfer response."""
     id: int
     family_id: int
-    from_member_id: Optional[int]
-    to_member_id: Optional[int]
+    from_member_id: int
+    to_member_id: Optional[int]  # Может быть None если перевод на конкретный счет
     from_account_id: Optional[int]
     to_account_id: Optional[int]
-    requested_by_member_id: Optional[int]
-    approved_by_member_id: Optional[int]
-    amount: float
+    amount: Decimal
     currency: str
     description: Optional[str]
     status: FamilyTransferStatus
     created_at: datetime
-    approved_at: Optional[datetime]
     executed_at: Optional[datetime]
-    failed_reason: Optional[str]
-
+    approved_by: Optional[int]
+    from_member_name: Optional[str] = None
+    to_member_name: Optional[str] = None
+    
     class Config:
-        orm_mode = True
+        from_attributes = True
 
+
+# ==================== Family Notification Schemas ====================
 
 class FamilyNotificationResponse(BaseModel):
+    """Schema for family notification response."""
     id: int
     family_id: int
     member_id: Optional[int]
-    notification_type: FamilyNotificationType
-    payload: Optional[dict]
-    status: FamilyNotificationStatus
+    type: FamilyNotificationType
+    payload: dict
+    status: str
     created_at: datetime
-    read_at: Optional[datetime]
-
+    
     class Config:
-        orm_mode = True
+        from_attributes = True
 
+
+# ==================== Family Activity Log Schemas ====================
+
+class FamilyActivityLogResponse(BaseModel):
+    """Schema for family activity log response."""
+    id: int
+    family_id: int
+    actor_id: Optional[int]
+    action: str
+    target: Optional[str]
+    action_metadata: Optional[dict]
+    timestamp: datetime
+    actor_name: Optional[str] = None
+    
+    class Config:
+        from_attributes = True
+
+
+# ==================== Family Analytics Schemas ====================
 
 class FamilyAnalyticsSummary(BaseModel):
-    total_balance: float
-    total_income: float
-    total_expense: float
-    budgets: List[dict]
+    """Schema for family analytics summary."""
+    total_income: Decimal
+    total_expenses: Decimal
+    net_balance: Decimal
+    budget_usage: List[dict]
+    limit_usage: List[dict]
+    goal_progress: List[dict]
+    top_categories: List[dict]
     member_spending: List[dict]
-    category_spending: List[dict]
-    goals: List[dict]
 
 
-class AccountVisibilityUpdate(BaseModel):
-    visibility_scope: AccountVisibilityScope
-
-
-class FamilyDashboardResponse(BaseModel):
-    family: FamilyDetailResponse
-    budgets: List[FamilyBudgetResponse]
-    limits: List[FamilyMemberLimitResponse]
-    goals: List[FamilyGoalResponse]
-    transfers: List[FamilyTransferResponse]
-    notifications: List[FamilyNotificationResponse]
-
+class FamilyMemberSpending(BaseModel):
+    """Schema for member spending breakdown."""
+    member_id: int
+    member_name: str
+    total_spending: Decimal
+    category_breakdown: List[dict]
+    limit_status: Optional[dict] = None
 

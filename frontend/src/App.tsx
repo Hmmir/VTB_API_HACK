@@ -10,11 +10,14 @@ import BudgetsPage from './pages/BudgetsPage';
 import GoalsPage from './pages/GoalsPage';
 import ProductsPage from './pages/ProductsPage';
 import MyProductsPage from './pages/MyProductsPage';
-import FamilyHubPage from './pages/FamilyHubPage';
 import RecommendationsPage from './pages/RecommendationsPage';
+import PremiumPage from './pages/PremiumPage';
+import FamilyHubPage from './pages/FamilyHubPage';
 import BankerConsolePage from './pages/BankerConsolePage';
 import AdminConsolePage from './pages/AdminConsolePage';
+import GostDemoPage from './pages/GostDemoPage';
 import Layout from './components/common/Layout';
+import PWAInstallPrompt from './components/PWAInstallPrompt';
 
 // Protected route wrapper
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -39,6 +42,7 @@ function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
+        <PWAInstallPrompt />
         <Routes>
           {/* Public routes */}
           <Route path="/login" element={<LoginPage />} />
@@ -59,10 +63,12 @@ function App() {
             <Route path="analytics" element={<AnalyticsPage />} />
             <Route path="budgets" element={<BudgetsPage />} />
             <Route path="goals" element={<GoalsPage />} />
-            <Route path="family" element={<FamilyHubPage />} />
             <Route path="products" element={<ProductsPage />} />
             <Route path="my-products" element={<MyProductsPage />} />
             <Route path="recommendations" element={<RecommendationsPage />} />
+            <Route path="premium" element={<PremiumPage />} />
+            <Route path="family" element={<FamilyHubPage />} />
+            <Route path="gost-demo" element={<GostDemoPage />} />
           </Route>
 
           {/* Console routes */}

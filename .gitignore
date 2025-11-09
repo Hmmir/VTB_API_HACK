@@ -88,27 +88,17 @@ docs/_build/
 .ipynb_checkpoints
 
 # Spec-Kit specific
-# Keep spec-kit downloaded folder for reference but not tracked
 spec-kit/
 
-# Keep generated specs and planning docs
-# specs/
-# memory/
-
-# Exclude all markdown files in root except README.md and QUICK_START.md
+# Exclude unnecessary markdown files (keep only important ones)
 /*.md
 !README.md
-!QUICK_START.md
+!DEPLOYMENT.md
+!ARCHITECTURE.md
+!MONETIZATION_MODEL.md
 
 # Exclude temporary files and packages
 *.zip
-*.ps1
-*.bat
-*.sh
-*.txt
-*.py
-!backend/**/*.py
-!frontend/**/*.py
 gost-gateway/
 temp_gost_extract/
 team075_gost_solution/
@@ -118,7 +108,76 @@ examples/
 pdf2docx/
 hs_err_pid*.log
 Гост установка.zip
+gost_banking_package.zip
+gost_extracted/
+
+# Exclude temporary scripts (keep only production-ready ones)
+*.ps1
+*.bat
+*.sh
+!start-project.ps1
+!test_gost_api.sh
+
+# Exclude test Python files in root
+/*.py
+!gost_windows_service.py
+
+# Exclude specific documentation files
 ИНСТРУКЦИЯ_ДЛЯ_ПРОДАЖИ.md
+ADVANCED_MONETIZATION_FEATURES.md
+ALL_FIXES_AND_COMPARISON.md
+API_EXAMPLES.md
+BUSINESS_MODEL_FOR_JURY.md
+CLIENT_READY_PACKAGE.md
+COMPLETE_GUIDE_FOR_AI_SETUP.md
+COMPLETED_WORK_SUMMARY.md
+CREATE_ZIP_INSTRUCTIONS.md
+DOCKER_CLEANUP_DONE.md
+DOCKER_README.md
+FAMILY_HUB_GUIDE.md
+FAMILY_HUB_STATUS.md
+FAMILY_HUB_TEST_REPORT.md
+FINAL_FIXES.md
+FINAL_IMPLEMENTATION_STATUS.md
+FINAL_IMPROVEMENTS.md
+FIXES_SUMMARY.md
+FRONTEND_IMPROVEMENTS_COMPLETE.md
+GOST_*.md
+HACKATHON_*.md
+HONEST_ANALYSIS_FOR_JURY.md
+JURY_REQUIREMENTS_CHECK.md
+LAYOUT_FIXES.md
+MESSAGE_TO_CLIENT.md
+MESSAGE_TO_CLIENT.txt
+MSYS2_TRUTH.md
+NEXT_STEPS_FOR_USER.md
+PACKAGE_FOR_CLIENT_README.md
+PROJECT_ANALYSIS.md
+PROJECT_WORKING.md
+PROOF_FOR_JURY_*.md
+PROOF_FOR_JURY_*.txt
+QUICK_*.md
+QUICK_*.txt
+README_FOR_JURY.md
+README_PACKAGE.md
+SPRINT_*.md
+START.md
+SUMMARY_FOR_USER.md
+TECHNICAL_ARCHITECTURE_FOR_JURY.md
+TELEGRAM_MESSAGE.txt
+TEST_UNIFIED_BANKING.md
+VISUAL_CHANGES_SUMMARY.md
+WHAT_PACKAGE_DOES.md
+
+# Exclude test files in backend root
+backend/*.py
+!backend/requirements.txt
+
+# Keep important backend scripts
+!backend/scripts/*.py
+!backend/app/**/*.py
+!backend/alembic/**/*.py
+
+# Exclude Dockerfiles in root (keep only docker-compose.yml)
 Dockerfile
 Dockerfile.windows
-

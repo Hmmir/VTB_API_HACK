@@ -1,184 +1,159 @@
-/**
- * Centralized Error Handler - Централизованная обработка ошибок
- */
 import toast from 'react-hot-toast';
 
 export interface APIError {
+  status: number;
+  message: string;
   detail?: string;
-  errors?: string[];
-  message?: string;
-  path?: string;
-  status?: number;
 }
 
 /**
- * Извлечь читаемое сообщение об ошибке из API response
+ * Centralized error handler for API responses
  */
-export function extractErrorMessage(error: any): string {
-  // Axios error
-  if (error.response) {
+export const handleAPIError = (error: any): APIError => {
+  // Default error
+  let apiError: APIError = {
+    status: 500,
+    message: 'Произошла ошибка. Попробуйте ещё раз.',
+    detail: error?.message || 'Unknown error'
+  };
+
+  // Parse different error formats
+  if (error?.response) {
+    // Axios-style error
+    const status = error.response.status;
     const data = error.response.data;
     
-    // Structured error from backend
-    if (data.detail) {
-      if (typeof data.detail === 'string') {
-        return data.detail;
-      }
-      if (Array.isArray(data.detail)) {
-        return data.detail.map((e: any) => e.msg || e.message || JSON.stringify(e)).join(', ');
-      }
-    }
+    apiError.status = status;
+    apiError.detail = data?.detail || data?.message || error.message;
     
-    // Validation errors
-    if (data.errors && Array.isArray(data.errors)) {
-      return data.errors.join('; ');
-    }
-    
-    // Generic message
-    if (data.message) {
-      return data.message;
-    }
-    
-    // HTTP status messages
-    const status = error.response.status;
+    // Map status codes to user-friendly messages
     switch (status) {
       case 400:
-        return 'Некорректный запрос. Проверьте введённые данные.';
+        apiError.message = 'Ошибка валидации данных';
+        break;
       case 401:
-        return 'Необходима авторизация. Войдите в систему.';
+        apiError.message = 'Требуется авторизация';
+        break;
       case 403:
-        return 'Доступ запрещён. Недостаточно прав.';
+        apiError.message = 'Доступ запрещён';
+        break;
       case 404:
-        return 'Запрашиваемый ресурс не найден.';
+        apiError.message = 'Ресурс не найден';
+        break;
       case 409:
-        return 'Конфликт данных. Возможно, запись уже существует.';
+        apiError.message = 'Конфликт данных: запись уже существует или нарушены ограничения БД';
+        break;
       case 422:
-        return 'Ошибка валидации данных.';
+        apiError.message = 'Ошибка валидации данных';
+        break;
       case 429:
-        return 'Слишком много запросов. Попробуйте позже.';
+        apiError.message = 'Слишком много запросов. Подождите немного';
+        break;
       case 500:
-        return 'Внутренняя ошибка сервера. Попробуйте позже.';
+        apiError.message = 'Ошибка сервера';
+        break;
       case 502:
-        return 'Сервер временно недоступен.';
+        apiError.message = 'Сервис временно недоступен';
+        break;
       case 503:
-        return 'Сервис временно недоступен.';
+        apiError.message = 'Сервис на обслуживании';
+        break;
       default:
-        return `Ошибка ${status}: ${error.response.statusText || 'Неизвестная ошибка'}`;
+        apiError.message = `Ошибка ${status}`;
+    }
+  } else if (error?.message) {
+    // Native JS error
+    if (error.message.includes('Network Error') || error.message.includes('fetch')) {
+      apiError.message = 'Проблема с соединением. Проверьте интернет';
+    } else if (error.message.includes('timeout')) {
+      apiError.message = 'Превышено время ожидания. Попробуйте ещё раз';
     }
   }
-  
-  // Network error
-  if (error.request) {
-    return 'Ошибка сети. Проверьте подключение к интернету.';
-  }
-  
-  // Other errors
-  if (error.message) {
-    return error.message;
-  }
-  
-  return 'Произошла неизвестная ошибка';
-}
+
+  return apiError;
+};
 
 /**
- * Handle API error and show toast notification
+ * Show error toast with retry option
  */
-export function handleAPIError(error: any, customMessage?: string): void {
-  console.error('API Error:', error);
+export const showErrorToast = (error: any, retryFn?: () => void) => {
+  const apiError = handleAPIError(error);
   
-  const message = customMessage || extractErrorMessage(error);
-  toast.error(message, {
+  // Show error toast
+  const message = retryFn 
+    ? `${apiError.message} (Нажмите для повтора)`
+    : apiError.message;
+  
+  const toastId = toast.error(message, {
     duration: 5000,
-    position: 'top-right',
+    onClick: retryFn ? () => {
+      toast.dismiss(toastId);
+      retryFn();
+    } : undefined
   });
-}
+  
+  // Log detail for debugging
+  console.error('[API Error]', apiError);
+  
+  return apiError;
+};
 
 /**
- * Handle success with toast notification
+ * Retry mechanism with exponential backoff
  */
-export function handleSuccess(message: string): void {
-  toast.success(message, {
-    duration: 3000,
-    position: 'top-right',
-  });
-}
-
-/**
- * Handle info with toast notification
- */
-export function handleInfo(message: string): void {
-  toast(message, {
-    duration: 4000,
-    position: 'top-right',
-    icon: 'ℹ️',
-  });
-}
-
-/**
- * Handle loading state with toast
- */
-export function handleLoading(message: string): string {
-  return toast.loading(message, {
-    position: 'top-right',
-  });
-}
-
-/**
- * Dismiss toast by ID
- */
-export function dismissToast(toastId: string): void {
-  toast.dismiss(toastId);
-}
-
-/**
- * Try-catch wrapper for async operations
- */
-export async function withErrorHandling<T>(
-  operation: () => Promise<T>,
-  errorMessage?: string,
-  successMessage?: string
-): Promise<T | null> {
-  try {
-    const result = await operation();
-    if (successMessage) {
-      handleSuccess(successMessage);
-    }
-    return result;
-  } catch (error) {
-    handleAPIError(error, errorMessage);
-    return null;
-  }
-}
-
-/**
- * Retry an operation with exponential backoff
- */
-export async function retryOperation<T>(
-  operation: () => Promise<T>,
+export const retryWithBackoff = async <T>(
+  fn: () => Promise<T>,
   maxRetries: number = 3,
-  initialDelay: number = 1000
-): Promise<T> {
+  baseDelay: number = 1000
+): Promise<T> => {
   let lastError: any;
   
-  for (let i = 0; i < maxRetries; i++) {
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
     try {
-      return await operation();
+      return await fn();
     } catch (error: any) {
       lastError = error;
       
       // Don't retry on client errors (4xx)
-      if (error.response && error.response.status >= 400 && error.response.status < 500) {
+      if (error?.response?.status >= 400 && error?.response?.status < 500) {
         throw error;
       }
       
-      // Wait before retry with exponential backoff
-      if (i < maxRetries - 1) {
-        const delay = initialDelay * Math.pow(2, i);
-        await new Promise(resolve => setTimeout(resolve, delay));
+      // Don't retry on last attempt
+      if (attempt === maxRetries - 1) {
+        break;
       }
+      
+      // Exponential backoff: 1s, 2s, 4s, 8s...
+      const delay = baseDelay * Math.pow(2, attempt);
+      console.log(`[Retry] Attempt ${attempt + 1} failed, retrying in ${delay}ms...`);
+      
+      await new Promise(resolve => setTimeout(resolve, delay));
     }
   }
   
   throw lastError;
-}
+};
 
+/**
+ * Wrapper for API calls with automatic retry and error handling
+ */
+export const apiCall = async <T>(
+  fn: () => Promise<T>,
+  options?: {
+    retries?: number;
+    showError?: boolean;
+    retryFn?: () => void;
+  }
+): Promise<T> => {
+  const { retries = 3, showError = true, retryFn } = options || {};
+  
+  try {
+    return await retryWithBackoff(fn, retries);
+  } catch (error) {
+    if (showError) {
+      showErrorToast(error, retryFn);
+    }
+    throw error;
+  }
+};

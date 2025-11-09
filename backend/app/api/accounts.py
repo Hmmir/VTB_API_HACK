@@ -23,10 +23,96 @@ def get_accounts(
     db: Session = Depends(get_db)
 ):
     """Get all accounts for current user."""
-    accounts = db.query(Account).join(Account.bank_connection).filter(
-        Account.bank_connection.has(user_id=current_user.id)
-    ).all()
-    return accounts
+    from sqlalchemy import or_, and_
+    from app.models.goal import Goal
+    import logging
+    
+    logger = logging.getLogger(__name__)
+    
+    # Получаем имена MyBank счетов для целей пользователя
+    user_goals = db.query(Goal).filter(Goal.user_id == current_user.id).all()
+    mybank_goal_account_names = [f"MyBank Goal: {goal.name}" for goal in user_goals]
+    
+    logger.info(f"User {current_user.id} has {len(user_goals)} goals, MyBank goal account names: {mybank_goal_account_names}")
+    
+    # Получаем семейные MyBank кошельки пользователя
+    from app.models.family import FamilySharedAccount, FamilyMember
+    
+    # Находим все семьи где пользователь участник
+    user_member_ids = db.query(FamilyMember.id).filter(FamilyMember.user_id == current_user.id).all()
+    user_member_ids = [m[0] for m in user_member_ids]
+    
+    # Находим ID всех семейных счетов
+    family_shared_account_ids = []
+    if user_member_ids:
+        family_shared_account_ids = db.query(FamilySharedAccount.account_id).filter(
+            FamilySharedAccount.member_id.in_(user_member_ids)
+        ).all()
+        family_shared_account_ids = [a[0] for a in family_shared_account_ids]
+    
+    logger.info(f"User {current_user.id} has {len(family_shared_account_ids)} family shared accounts")
+    
+    # Получаем счета с подключениями, MyBank счета целей И семейные MyBank счета
+    query_filter = Account.bank_connection.has(user_id=current_user.id)
+    
+    # Добавляем MyBank счета целей
+    if mybank_goal_account_names:
+        query_filter = or_(
+            query_filter,
+            and_(
+                Account.bank_connection_id.is_(None),
+                Account.account_name.in_(mybank_goal_account_names)
+            )
+        )
+    
+    # Добавляем семейные счета (они тоже MyBank без подключения)
+    if family_shared_account_ids:
+        query_filter = or_(
+            query_filter,
+            Account.id.in_(family_shared_account_ids)
+        )
+    
+    accounts = db.query(Account).outerjoin(Account.bank_connection).filter(query_filter).all()
+    
+    logger.info(f"Found {len(accounts)} accounts for user {current_user.id}")
+    
+    # Добавляем информацию о банке к каждому счету
+    result = []
+    for account in accounts:
+        # Определяем название банка по provider
+        bank_name_map = {
+            "vbank": "VBank",
+            "abank": "ABank",
+            "sbank": "SBank",
+            "mybank": "MyBank"
+        }
+        
+        # Если нет подключения, это MyBank счет цели
+        if not account.bank_connection:
+            provider = "mybank"
+            bank_display_name = "MyBank"
+            logger.info(f"MyBank account without connection: {account.account_name}")
+        else:
+            provider = account.bank_connection.bank_provider.value
+            bank_display_name = bank_name_map.get(provider, provider.upper() if provider else "Банк")
+        
+        account_dict = {
+            "id": account.id,
+            "bank_connection_id": account.bank_connection_id,
+            "account_name": account.account_name,
+            "account_number": account.account_number,
+            "account_type": account.account_type,
+            "balance": account.balance,
+            "currency": account.currency,
+            "credit_limit": account.credit_limit,
+            "is_active": account.is_active,
+            "last_synced_at": account.last_synced_at,
+            "bank_name": bank_display_name,
+            "bank_provider": provider,
+        }
+        result.append(account_dict)
+    
+    return result
 
 
 @router.get("/{account_id}", response_model=AccountResponse)
@@ -158,4 +244,66 @@ def transfer_between_accounts(
     except Exception as exc:  # pragma: no cover
         db.rollback()
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Не удалось выполнить перевод") from exc
+
+
+@router.get("/{account_id}/transactions")
+def get_account_transactions(
+    account_id: int,
+    limit: int = 100,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Get transactions for a specific account."""
+    # Проверяем что счет принадлежит пользователю или доступен через семейную группу
+    from sqlalchemy import or_, and_
+    from app.models.bank_connection import BankConnection
+    from app.models.family import FamilySharedAccount, FamilyMember
+
+    user_member_records = db.query(FamilyMember.id, FamilyMember.family_id).filter(
+        FamilyMember.user_id == current_user.id
+    ).all()
+    user_member_ids = [record[0] for record in user_member_records]
+    user_family_ids = [record[1] for record in user_member_records]
+
+    access_conditions = [BankConnection.user_id == current_user.id]
+    if user_family_ids:
+        access_conditions.append(
+            and_(
+                Account.bank_connection_id.is_(None),
+                Account.family_id.isnot(None),
+                Account.family_id.in_(user_family_ids),
+            )
+        )
+
+    account = db.query(Account).outerjoin(
+        BankConnection, Account.bank_connection_id == BankConnection.id
+    ).filter(
+        Account.id == account_id,
+        or_(*access_conditions)
+    ).first()
+    
+    # Проверка 2: Счет доступен через семейную группу (shared accounts)
+    if not account and user_member_ids:
+        family_account = db.query(FamilySharedAccount).filter(
+            FamilySharedAccount.account_id == account_id,
+            FamilySharedAccount.member_id.in_(user_member_ids)
+        ).first()
+
+        if family_account:
+            account = db.query(Account).filter(Account.id == account_id).first()
+
+    if not account:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Account not found or access denied"
+        )
+    
+    # Получаем транзакции
+    transactions = db.query(Transaction).filter(
+        Transaction.account_id == account_id
+    ).order_by(
+        Transaction.transaction_date.desc()
+    ).limit(limit).all()
+    
+    return transactions
 

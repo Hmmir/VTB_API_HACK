@@ -284,7 +284,11 @@ class OpenBankingService:
                             currency = amount_data.get("currency", "RUB")
                             credit_debit = tx.get("creditDebitIndicator", "Debit")
                             
-                            tx_type = TransactionType.INCOME if credit_debit == "Credit" else TransactionType.EXPENSE
+                            # Поддержка нового формата API (01=Credit/Доход, 02=Debit/Расход)
+                            if credit_debit in ["Credit", "01"]:
+                                tx_type = TransactionType.INCOME
+                            else:
+                                tx_type = TransactionType.EXPENSE
                             
                             # Auto-categorize
                             description = tx.get("transactionInformation", "Транзакция")

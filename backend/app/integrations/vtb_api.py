@@ -111,6 +111,40 @@ class OpenBankingClient:
         return response.json()
     
     @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=2, max=10))
+    async def refresh_token(
+        self,
+        bank_provider: str,
+        refresh_token: str
+    ) -> Dict[str, Any]:
+        """
+        Refresh OAuth access token using refresh token.
+        
+        Args:
+            bank_provider: Bank code (vtb, sberbank, etc.)
+            refresh_token: Refresh token from previous auth
+            
+        Returns:
+            Dict with new access_token, refresh_token, expires_in
+        """
+        # OAuth2 token refresh endpoint
+        url = f"{self.base_url}/auth/token/refresh"
+        
+        payload = {
+            "grant_type": "refresh_token",
+            "refresh_token": refresh_token,
+            "client_id": self.team_id or "demo",
+            "client_secret": "secret"
+        }
+        
+        response = await self.client.post(
+            url,
+            json=payload,
+            headers={"Content-Type": "application/json"}
+        )
+        response.raise_for_status()
+        return response.json()
+    
+    @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=2, max=10))
     async def get_random_demo_client(self, access_token: Optional[str] = None) -> Dict[str, Any]:
         """Get random demo client credentials for testing.
         
@@ -305,6 +339,43 @@ class OpenBankingClient:
             url,
             json=account_data,
             headers=self._get_headers(client_token)
+        )
+        response.raise_for_status()
+        return response.json()
+    
+    @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=2, max=10))
+    async def create_shared_account(
+        self,
+        access_token: str,
+        bank_code: str,
+        account_data: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        """
+        Create shared family account through Banking API.
+        
+        According to open.bankingapi.ru "Свой банк" documentation:
+        POST /api/v1/accounts
+        {
+            "account_type": "shared",
+            "currency": "RUB",
+            "name": "Семейный счет",
+            "authorized_users": [user_id_1, user_id_2],
+            "metadata": {...}
+        }
+        """
+        # Use bank-specific endpoint if provided
+        if bank_code and bank_code != "vtb":
+            url = f"https://api.{bank_code}.ru/v1/accounts"
+        else:
+            url = f"{self.base_url}/accounts"
+        
+        # Ensure account_type is set to shared
+        account_data["account_type"] = "shared"
+        
+        response = await self.client.post(
+            url,
+            json=account_data,
+            headers=self._get_headers(access_token)
         )
         response.raise_for_status()
         return response.json()

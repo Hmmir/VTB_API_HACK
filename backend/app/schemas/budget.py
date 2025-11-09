@@ -7,8 +7,10 @@ from decimal import Decimal
 
 class BudgetCreate(BaseModel):
     """Schema for creating a budget."""
+    name: str
     category_id: int
     amount: Decimal
+    period: Optional[str] = "monthly"
     start_date: datetime
     end_date: datetime
 
@@ -28,11 +30,12 @@ class BudgetResponse(BaseModel):
     category_id: Optional[int]
     name: str
     amount: Decimal
-    period: str
+    period: Optional[str] = None
     start_date: datetime
     end_date: Optional[datetime]
     is_active: int
     
     class Config:
         from_attributes = True
+        arbitrary_types_allowed = True
 

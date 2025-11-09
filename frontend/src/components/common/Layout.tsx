@@ -24,9 +24,11 @@ const Layout = () => {
     { path: '/analytics', label: 'Аналитика', icon: '📊', tagline: 'Спектр метрик' },
     { path: '/budgets', label: 'Бюджеты', icon: '💰', tagline: 'Контуры планирования' },
     { path: '/goals', label: 'Цели', icon: '🎯', tagline: 'Финансовые векторы' },
-    { path: '/family', label: 'Семья', icon: '👨‍👩‍👧', tagline: 'Family Banking Hub' },
     { path: '/products', label: 'Продукты', icon: '🏦', tagline: 'Витрина сервисов' },
+    { path: '/family', label: 'Семья', icon: '👨‍👩‍👦', tagline: 'Семейный хаб' },
     { path: '/recommendations', label: 'Советы', icon: '💡', tagline: 'Персональные инсайты' },
+    { path: '/premium', label: 'Premium', icon: '✨', tagline: 'Подписка и фичи' },
+    { path: '/gost-demo', label: 'ГОСТ', icon: '🔐', tagline: 'Криптография демо' },
   ];
 
   const renderNavItem = (item: typeof navItems[number]) => {

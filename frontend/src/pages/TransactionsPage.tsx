@@ -280,7 +280,6 @@ const TransactionsPage = () => {
                     Дата {sortBy === 'date' && (sortOrder === 'asc' ? '↑' : '↓')}
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-semibold text-ink/60 uppercase tracking-wider">Описание</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-ink/60 uppercase tracking-wider">Категория</th>
                   <th 
                     className="px-4 py-3 text-right text-xs font-semibold text-ink/60 uppercase tracking-wider cursor-pointer hover:bg-white/60 transition-colors"
                     onClick={() => toggleSort('amount')}
@@ -296,13 +295,6 @@ const TransactionsPage = () => {
                     <td className="px-4 py-3 text-sm text-ink">
                       <div className="font-medium">{t.description || 'Транзакция'}</div>
                       {t.merchant && <div className="text-ink/50 text-xs mt-1">{t.merchant}</div>}
-                    </td>
-                    <td className="px-4 py-3 text-sm">
-                      {t.category && (
-                        <span className="inline-block px-2 py-1 bg-primary-100/50 text-primary-700 text-xs rounded-lg">
-                          {t.category.name}
-                        </span>
-                      )}
                     </td>
                     <td className={"px-4 py-3 text-sm font-semibold text-right " + (t.transaction_type==='income'? 'text-primary-600':'text-roseflare')}>
                       {t.transaction_type === 'income' ? '+' : '-'}{formatCurrency(Number(t.amount))}

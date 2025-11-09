@@ -8,7 +8,7 @@ from decimal import Decimal
 class AccountResponse(BaseModel):
     """Schema for account response."""
     id: int
-    bank_connection_id: int
+    bank_connection_id: Optional[int]  # Может быть None для MyBank счетов целей
     account_name: str
     account_number: Optional[str]
     account_type: str
@@ -17,6 +17,9 @@ class AccountResponse(BaseModel):
     credit_limit: Optional[Decimal]
     is_active: int
     last_synced_at: Optional[datetime]
+    # Добавляем информацию о банке
+    bank_name: Optional[str] = None
+    bank_provider: Optional[str] = None
     
     class Config:
         from_attributes = True

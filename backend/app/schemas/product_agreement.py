@@ -43,7 +43,7 @@ class ProductAgreementCreate(BaseModel):
 
 class ProductAgreementSign(BaseModel):
     """Sign agreement to activate it."""
-    signature: str = Field(..., min_length=10)  # Digital signature or PIN
+    signature: str = Field(..., min_length=3)  # Digital signature or PIN
 
 
 class ProductAgreementResponse(BaseModel):

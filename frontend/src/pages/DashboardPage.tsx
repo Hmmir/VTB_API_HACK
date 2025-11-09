@@ -9,6 +9,7 @@ import SpendingChart from '../components/charts/SpendingChart';
 import BalanceTrendChart from '../components/charts/BalanceTrendChart';
 import IncomeExpenseChart from '../components/charts/IncomeExpenseChart';
 import GOSTResponsePanel from '../components/GOSTResponsePanel';
+import AIInsights from '../components/AIInsights';
 import { formatCompactCurrency, formatCurrency } from '../utils/formatters';
 
 const DashboardPage = () => {
@@ -56,18 +57,25 @@ const DashboardPage = () => {
         api.getAnalyticsSummary(30).catch(() => null),
       ]);
 
-      setAccounts(accountsData);
-      setConnections(connectionsData);
-      setRecentTransactions(transactionsData);
+      // Ensure arrays are actually arrays
+      setAccounts(Array.isArray(accountsData) ? accountsData : []);
+      setConnections(Array.isArray(connectionsData) ? connectionsData : []);
+      setRecentTransactions(Array.isArray(transactionsData) ? transactionsData : []);
       setAnalytics(analyticsData);
     } catch (error) {
       console.error('Failed to load dashboard data:', error);
+      // Set defaults on error
+      setAccounts([]);
+      setConnections([]);
+      setRecentTransactions([]);
     } finally {
       setLoading(false);
     }
   };
 
-  const totalBalance = accounts.reduce((sum: number, acc: Account) => sum + Number(acc.balance), 0);
+  const totalBalance = Array.isArray(accounts) 
+    ? accounts.reduce((sum: number, acc: Account) => sum + Number(acc.balance), 0)
+    : 0;
 
   const getBankIcon = (bankCode: string) => {
     const icons: Record<string, string> = {
@@ -88,15 +96,17 @@ const DashboardPage = () => {
   };
 
   // Group accounts by bank
-  const accountsByBank = connections.map((conn: BankConnection) => {
-    const bankAccounts = accounts.filter((acc: Account) => acc.bank_connection_id === conn.id);
+  const accountsByBank = Array.isArray(connections) ? connections.map((conn: BankConnection) => {
+    const bankAccounts = Array.isArray(accounts) 
+      ? accounts.filter((acc: Account) => acc.bank_connection_id === conn.id)
+      : [];
     const totalBalance = bankAccounts.reduce((sum: number, acc: Account) => sum + Number(acc.balance), 0);
     return {
       connection: conn,
       accounts: bankAccounts,
       totalBalance
     };
-  });
+  }) : [];
 
   if (loading) {
     return (
@@ -441,6 +451,13 @@ const DashboardPage = () => {
             </Link>
           </div>
         </Card>
+      )}
+
+      {/* AI Insights Section */}
+      {accounts.length > 0 && (
+        <section className="my-8">
+          <AIInsights />
+        </section>
       )}
 
       {accounts.length > 0 && (

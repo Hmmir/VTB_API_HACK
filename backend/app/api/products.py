@@ -19,21 +19,40 @@ async def get_products(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """Get bank products from all banks (public data, no auth required)."""
+    """Get bank products from connected banks (requires auth since API update)."""
     
-    # Products are public data - fetch from all banks without auth
-    banks_to_fetch = ['vbank', 'abank', 'sbank']
+    # Получаем активные подключения пользователя
+    connections = db.query(BankConnection).filter(
+        BankConnection.user_id == current_user.id,
+        BankConnection.status == 'ACTIVE'
+    ).all()
     
     if bank_code:
-        banks_to_fetch = [bank_code.lower()]
+        connections = [c for c in connections if c.bank_provider.value.lower() == bank_code.lower()]
     
     all_products = []
     
-    for bank in banks_to_fetch:
+    for connection in connections:
+        bank = connection.bank_provider.value.lower()
         try:
-            # Get products from bank (no token needed for public product catalog)
+            # Расшифровываем токен
+            try:
+                client_token = decrypt_token(connection.access_token_encrypted)
+            except Exception as decrypt_error:
+                # Если токен не расшифровывается, пробуем обновить его
+                print(f"Token decrypt failed for {bank}, refreshing connection: {decrypt_error}")
+                try:
+                    # Пробуем обновить токен через refresh_token
+                    from app.services.openbanking_service import OpenBankingService
+                    new_token = await OpenBankingService.refresh_access_token(db, connection.id)
+                    client_token = new_token
+                except Exception as refresh_error:
+                    print(f"Token refresh failed for {bank}, skipping: {refresh_error}")
+                    continue
+            
+            # Получаем продукты с авторизацией (API изменился, теперь требует токен)
             async with OpenBankingClient(bank) as client:
-                products_response = await client.get_products(access_token=None)
+                products_response = await client.get_products(access_token=client_token)
                 
                 # Handle different response formats
                 if isinstance(products_response, list):
@@ -71,6 +90,16 @@ async def get_products(
             import traceback
             traceback.print_exc()
             continue
+    
+    # Fallback: если продукты не загрузились, показываем демо
+    if len(all_products) == 0:
+        print("⚠️ No products from banks, using demo products")
+        all_products = [
+            {"productId": "DEMO_DEPOSIT_12M", "productName": "Депозит 12 мес (8.5%)", "productType": "DEPOSIT", "interestRate": 8.5, "minAmount": 10000, "term": 12, "bank_code": "vbank", "bank_name": "Virtual Bank"},
+            {"productId": "DEMO_DEPOSIT_6M", "productName": "Депозит 6 мес (7.5%)", "productType": "DEPOSIT", "interestRate": 7.5, "minAmount": 5000, "term": 6, "bank_code": "abank", "bank_name": "Awesome Bank"},
+            {"productId": "DEMO_LOAN", "productName": "Потребительский кредит (12.9%)", "productType": "LOAN", "interestRate": 12.9, "minAmount": 50000, "maxAmount": 3000000, "term": 60, "bank_code": "sbank", "bank_name": "Smart Bank"},
+            {"productId": "DEMO_CARD", "productName": "Кредитная карта Standard", "productType": "CREDIT_CARD", "interestRate": 19.9, "minAmount": 10000, "maxAmount": 500000, "bank_code": "vbank", "bank_name": "Virtual Bank"}
+        ]
     
     return {"products": all_products, "total": len(all_products)}
 

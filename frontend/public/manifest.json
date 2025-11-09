@@ -1,43 +1,57 @@
 {
-  "name": "FinanceHub - Управляй финансами умно",
+  "name": "FinanceHub - Мультибанк",
   "short_name": "FinanceHub",
-  "description": "Единый интерфейс финансового сервиса для агрегации данных из нескольких банков",
+  "description": "Управляйте финансами всей семьи в одном приложении",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
-  "theme_color": "#4F46E5",
+  "theme_color": "#24B09A",
   "orientation": "portrait-primary",
+  "scope": "/",
   "icons": [
     {
-      "src": "/icons/icon-192x192.png",
+      "src": "/icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "/icons/icon-512x512.png",
+      "src": "/icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
     }
   ],
   "categories": ["finance", "productivity"],
-  "screenshots": [],
+  "screenshots": [
+    {
+      "src": "/screenshot-mobile.png",
+      "sizes": "390x844",
+      "type": "image/png",
+      "form_factor": "narrow"
+    }
+  ],
   "shortcuts": [
     {
       "name": "Дашборд",
       "short_name": "Главная",
-      "description": "Открыть главный дашборд",
+      "description": "Открыть главную панель",
       "url": "/",
-      "icons": [{ "src": "/icons/icon-192x192.png", "sizes": "192x192" }]
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
     },
     {
       "name": "Транзакции",
       "short_name": "Транзакции",
       "description": "Просмотр транзакций",
       "url": "/transactions",
-      "icons": [{ "src": "/icons/icon-192x192.png", "sizes": "192x192" }]
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Семья",
+      "short_name": "Семья",
+      "description": "Family Banking Hub",
+      "url": "/family",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
     }
   ]
 }
-

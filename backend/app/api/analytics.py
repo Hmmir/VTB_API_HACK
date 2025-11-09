@@ -10,6 +10,7 @@ from app.models.user import User
 from app.models.transaction import Transaction, TransactionType
 from app.models.account import Account
 from app.models.category import Category
+from app.services.ai_insights import AIInsightsService
 
 router = APIRouter()
 
@@ -177,4 +178,49 @@ def get_spending_trends(
         }
         for row in results
     ]
+
+
+@router.get("/ai-insights")
+def get_ai_insights(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+) -> Dict[str, Any]:
+    """
+    Get AI-powered budget insights and recommendations.
+    
+    Analyzes user's transaction history and generates:
+    - Top spending categories
+    - Spending trends
+    - Savings potential
+    - Unusual activity detection
+    - Optimization tips
+    """
+    insights = AIInsightsService.generate_insights(db, current_user.id)
+    
+    return {
+        "insights": insights,
+        "count": len(insights),
+        "generated_at": datetime.utcnow().isoformat()
+    }
+
+
+@router.get("/financial-health")
+def get_financial_health_score(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+) -> Dict[str, Any]:
+    """
+    Get financial health score (0-100) based on:
+    - Savings rate (40%)
+    - Expense stability (30%)
+    - Account balances (30%)
+    
+    Returns score, grade (A+, A, B, C, D), and detailed breakdown.
+    """
+    health = AIInsightsService.get_financial_health_score(db, current_user.id)
+    
+    return {
+        "health": health,
+        "calculated_at": datetime.utcnow().isoformat()
+    }
 

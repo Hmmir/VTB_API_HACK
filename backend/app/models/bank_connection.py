@@ -11,6 +11,7 @@ class BankProvider(str, Enum):
     VBANK = "vbank"
     ABANK = "abank"
     SBANK = "sbank"
+    MYBANK = "mybank"  # Our own bank with goals/cards support
 
 
 class ConnectionStatus(str, Enum):

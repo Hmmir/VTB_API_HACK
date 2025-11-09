@@ -222,29 +222,11 @@ const AnalyticsPage = () => {
                       {averageDailyBalance >= 0 ? '+' : ''}
                       {formatCurrency(averageDailyBalance, { maximumFractionDigits: 0 })} ₽
                     </p>
-                    <p className="mt-2 text-xs text-ink/50">Повысьте баланс через Premium‑сценарии</p>
+                    <p className="mt-2 text-xs text-ink/50">Отслеживайте динамику вашего баланса</p>
                   </Card>
                 </>
               )}
             </div>
-          </div>
-          </Card>
-
-        <Card className="relative overflow-hidden bg-gradient-to-br from-primary-500 to-primary-700 p-7 text-white">
-          <span className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.25),transparent_70%)]" />
-          <div className="relative z-10 space-y-4">
-            <p className="text-xs uppercase tracking-[0.32em] text-white/70">Premium insight</p>
-            <h2 className="font-display text-2xl">
-              Разблокируйте сценарии “Что если” и прогноз cashflow на 90 дней
-            </h2>
-            <p className="text-sm text-white/80">
-              Premium режим автоматически симулирует ипотечные платежи, налоговые периоды и кассовые разрывы.
-              Подписка окупается, если вы находите минимум один оптимизационный сценарий в квартал.
-            </p>
-            <Button variant="ghost" className="bg-white/20 text-white hover:bg-white/30">
-              Оформить Premium за 299 ₽
-            </Button>
-            <p className="text-xs text-white/60">Финансовая картина обновляется каждые 30 минут • Отмена в один клик</p>
           </div>
           </Card>
       </section>
@@ -417,13 +399,6 @@ const AnalyticsPage = () => {
                 Через 11 дней ожидается пиковый расход. Перенаправьте {formatCurrency(Math.abs(averageDailyBalance * 5))} ₽ с накопительного счёта заранее, чтобы избежать кассового разрыва.
               </p>
             </Card>
-            <Card className="bg-white/80 p-4 shadow-none">
-              <p className="text-xs uppercase tracking-[0.28em] text-ink/45">Premium ROI</p>
-              <p className="mt-2 text-sm text-ink/70">
-                Premium-подписка окупается, если вы находите минимум одну экономию в месяц. Средний пользователь сохраняет{' '}
-                <span className="font-semibold text-primary-700">до 18 000 ₽</span> в год.
-              </p>
-            </Card>
           </div>
         </Card>
       </section>
@@ -495,6 +470,27 @@ const AnalyticsPage = () => {
         )}
       </Card>
       </section>
+
+      {/* Premium Upgrade Banner */}
+      <Card className="relative overflow-hidden bg-gradient-to-br from-purple-100 via-purple-50 to-white/70 p-8">
+        <span className="pointer-events-none absolute -right-16 -top-16 h-48 w-48 rounded-full bg-purple-300/30 blur-3xl" />
+        <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-6">
+          <div className="space-y-2">
+            <h3 className="text-2xl font-display text-ink">📊 Расширенная аналитика в Premium</h3>
+            <p className="text-sm text-ink/70">
+              Анализ до 365 дней, AI-рекомендации по оптимизации расходов, персональные инсайты.
+              Получайте больше из ваших данных.
+            </p>
+          </div>
+          <Button 
+            variant="primary" 
+            onClick={() => window.location.href = '/premium'}
+            className="whitespace-nowrap px-8 py-3"
+          >
+            Смотреть Premium
+          </Button>
+        </div>
+      </Card>
     </div>
   );
 };

@@ -39,7 +39,7 @@ export interface BankConnection {
 // Account types
 export interface Account {
   id: number;
-  bank_connection_id: number;
+  bank_connection_id: number | null;
   account_name: string;
   account_number?: string;
   account_type: string;
@@ -48,6 +48,10 @@ export interface Account {
   credit_limit?: number;
   is_active: number;
   last_synced_at?: string;
+  bank_provider?: string;
+  bank_name?: string;
+  external_account_id?: string;
+  family_id?: number;
 }
 
 // Transaction types
@@ -126,120 +130,5 @@ export interface Recommendation {
   status: string;
   viewed_at?: string;
   created_at: string;
-}
-
-// Family Hub types
-export interface Family {
-  id: number;
-  name: string;
-  description?: string;
-  invite_code: string;
-  created_at: string;
-  updated_at: string;
-  role: string;
-  status: string;
-}
-
-export interface FamilyMember {
-  id: number;
-  user_id: number;
-  role: string;
-  status: string;
-  joined_at?: string;
-  show_accounts?: boolean;
-  default_visibility?: string;
-  custom_limits?: Record<string, unknown> | null;
-}
-
-export interface FamilyDetail extends Family {
-  members: FamilyMember[];
-}
-
-export interface FamilyBudget {
-  id: number;
-  name: string;
-  amount: number;
-  period: string;
-  status: string;
-  category_id?: number;
-  start_date?: string;
-  end_date?: string;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface FamilyMemberLimit {
-  id: number;
-  member_id: number;
-  amount: number;
-  period: string;
-  status: string;
-  category_id?: number;
-  auto_unlock: boolean;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface FamilyGoal {
-  id: number;
-  name: string;
-  description?: string;
-  target_amount: number;
-  current_amount: number;
-  deadline?: string;
-  status: string;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface FamilyGoalContribution {
-  id: number;
-  goal_id: number;
-  member_id: number;
-  amount: number;
-  source_account_id?: number;
-  scheduled: boolean;
-  schedule_rule?: Record<string, unknown> | null;
-  created_at: string;
-}
-
-export interface FamilyTransfer {
-  id: number;
-  family_id: number;
-  from_member_id?: number;
-  to_member_id?: number;
-  from_account_id?: number;
-  to_account_id?: number;
-  requested_by_member_id?: number;
-  approved_by_member_id?: number;
-  amount: number;
-  currency: string;
-  description?: string;
-  status: string;
-  created_at: string;
-  approved_at?: string;
-  executed_at?: string;
-  failed_reason?: string;
-}
-
-export interface FamilyNotification {
-  id: number;
-  family_id: number;
-  member_id?: number;
-  notification_type: string;
-  payload?: Record<string, unknown> | null;
-  status: string;
-  created_at: string;
-  read_at?: string;
-}
-
-export interface FamilyAnalyticsSummary {
-  total_balance: number;
-  total_income: number;
-  total_expense: number;
-  budgets: Array<Record<string, unknown>>;
-  member_spending: Array<Record<string, unknown>>;
-  category_spending: Array<Record<string, unknown>>;
-  goals: Array<Record<string, unknown>>;
 }
 

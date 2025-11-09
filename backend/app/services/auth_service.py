@@ -12,6 +12,12 @@ from app.utils.security import (
     create_refresh_token,
     decode_token
 )
+from app.integrations.mybank_client import get_mybank_client, DEFAULT_MYBANK_PASSWORD
+import logging
+import asyncio
+import httpx
+
+logger = logging.getLogger(__name__)
 
 
 class AuthService:
@@ -51,6 +57,38 @@ class AuthService:
         db.add(new_user)
         db.commit()
         db.refresh(new_user)
+        
+        # Автоматически создаем аккаунт в MyBank для целей и семейных счетов
+        loop = None
+        try:
+            mybank = get_mybank_client()
+            
+            async def register_mybank():
+                try:
+                    await mybank.register_customer(
+                        full_name=user_data.full_name or email.split('@')[0],
+                        email=email,
+                        phone=user_data.phone or "+70000000000",
+                        password=DEFAULT_MYBANK_PASSWORD
+                    )
+                    logger.info(f"✅ MyBank account created for {email}")
+                except httpx.HTTPStatusError as http_err:
+                    if http_err.response.status_code == 400:
+                        logger.info(f"ℹ️ MyBank account already exists for {email}")
+                    else:
+                        raise
+            
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            loop.run_until_complete(register_mybank())
+        except Exception as e:
+            logger.warning(f"⚠️ Failed to create MyBank account for {email}: {e}")
+        finally:
+            try:
+                if loop:
+                    loop.close()
+            except Exception:
+                pass
         
         return new_user
     
