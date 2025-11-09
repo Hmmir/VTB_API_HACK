@@ -13,12 +13,6 @@ const LoginPage = () => {
   const { login } = useAuth();
   const navigate = useNavigate();
 
-  // Quick fill demo credentials
-  const fillDemoCredentials = () => {
-    setEmail('demo');
-    setPassword('demo123');
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -93,17 +87,7 @@ const LoginPage = () => {
             <p className="text-sm text-ink/60">Выберите подходящий ключ доступа или используйте свои учетные данные.</p>
           </div>
 
-          <div className="mt-8 space-y-3">
-            <div className="rounded-[1.4rem] border border-white/40 bg-white/70 p-4">
-              <div className="flex items-center justify-between text-xs font-semibold uppercase tracking-[0.25em] text-ink/45">
-                <span>Демо-пользователь</span>
-                <span>Случайный</span>
-              </div>
-              <Button onClick={fillDemoCredentials} variant="secondary" size="sm" className="mt-3 w-full" type="button">
-                demo
-              </Button>
-            </div>
-
+          <div className="mt-8">
             <div className="rounded-[1.4rem] border border-primary-200 bg-primary-100/70 p-4">
               <div className="flex items-center justify-between text-xs font-semibold uppercase tracking-[0.25em] text-primary-700">
                 <span>Командные клиенты</span>
@@ -121,25 +105,6 @@ const LoginPage = () => {
                 type="button"
               >
                 🎲 Сгенерировать логин
-              </Button>
-            </div>
-
-            <div className="rounded-[1.4rem] border border-roseflare/40 bg-roseflare/10 p-4">
-              <div className="flex items-center justify-between text-xs font-semibold uppercase tracking-[0.25em] text-roseflare">
-                <span>ГОСТ-демо</span>
-                <span>Для жюри</span>
-              </div>
-              <Button
-                onClick={() => {
-                  setEmail('team075-demo');
-                  setPassword('gost2024');
-                }}
-                variant="primary"
-                size="sm"
-                className="mt-3 w-full"
-                type="button"
-              >
-                team075-demo (ГОСТ)
               </Button>
             </div>
           </div>
