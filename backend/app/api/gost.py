@@ -108,7 +108,7 @@ async def test_gost_connection(
                 result = response.json()
                 logger.info(f"✅ GOST test через Windows service: success={result.get('success')}")
                 return result
-    else:
+            else:
                 logger.warning(f"Windows service вернул {response.status_code}")
         except requests.exceptions.ConnectionError:
             logger.warning("Windows service недоступен, пробуем через Docker контейнер...")
