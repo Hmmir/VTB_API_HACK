@@ -124,7 +124,7 @@ async def test_gost_connection(
         else:
             message = f"❌ GOST TLS не работает: {result.get('error', 'Unknown error')}"
         
-    return {
+        return {
             **result,
             "message": message
         }
