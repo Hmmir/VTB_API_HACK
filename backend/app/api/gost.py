@@ -177,7 +177,7 @@ async def gost_health_check(
         raise
     except Exception as e:
         logger.error(f"Health check failed: {e}")
-                return {
+        return {
             "auth": False,
             "standard_api": False,
             "gost_tls": False,
